@@ -220,17 +220,19 @@ const TALENTS=[
   {id:'W3',w:'hammer',s:'战士流',name:'巨人挥击',max:6,desc:'攻击范围 +20%'},
   {id:'W4',w:'hammer',s:'战士流',name:'狂热',max:10,desc:'攻击速度 +15%'},
   {id:'W6',w:'hammer',s:'战士流',name:'余震',max:3,desc:'命中的敌人0.4秒后受到额外的一次震荡伤害'},
+  {id:'W7',w:'hammer',s:'战士流',name:'崩裂',max:6,desc:'大锤伤害 +1'},
   {id:'W5',w:'hammer',s:'战士流',name:'地震波',max:1,key:1,desc:'挥锤向前方释放地裂冲击波，贯穿敌人(获得远程打击)'},
   // ===== 大锤·雷霆流 =====
   {id:'L1',w:'hammer',s:'雷霆流',name:'感电',max:1,desc:'大锤命中时引出一道闪电，链接并电击附近的1名敌人'},
   {id:'L2',w:'hammer',s:'雷霆流',name:'导电',max:3,req:'L1',desc:'闪电伤害+1，并多链接1名敌人'},
   {id:'L3',w:'hammer',s:'雷霆流',name:'静电积蓄',max:2,desc:'每第3次锤击（升级后更频繁）释放一圈范围电击'},
-  {id:'L4',w:'hammer',s:'雷霆流',name:'雷霆万钧',max:1,key:1,desc:'翻滚后你的下一次锤击引落雷，重击目标'},
+  {id:'L4',w:'hammer',s:'雷霆流',name:'雷霆万钧',max:1,key:1,desc:'【Q】召唤落雷轰击目标(冷却5秒)'},
   // ===== 长剑·吸血流 =====
   {id:'B1',w:'sword',s:'吸血流',name:'血刃',max:1,desc:'剑刃吸血：每命中5次回复1点生命'},
   {id:'B2',w:'sword',s:'吸血流',name:'剑舞',max:10,desc:'攻击速度 +15%'},
   {id:'B3',w:'sword',s:'吸血流',name:'三段连击',max:1,desc:'连击的第3斩造成2倍伤害'},
   {id:'B6',w:'sword',s:'吸血流',name:'利刃',max:10,desc:'长剑伤害 +1'},
+  {id:'B7',w:'sword',s:'吸血流',name:'连刃',max:5,desc:'攻击速度 +10%'},
   {id:'B4',w:'sword',s:'吸血流',name:'血怒',max:1,desc:'生命低于1/3时：攻速+40%，吸血所需命中次数减半'},
   {id:'B5',w:'sword',s:'吸血流',name:'剑气纵横',max:1,key:1,desc:'每次挥剑放出一道穿透剑气，斩碎远处的敌人'},
   // ===== 长剑·御剑流 =====
@@ -250,25 +252,28 @@ const TALENTS=[
   {id:'P3',w:'mage',s:'火法',name:'爆轰',max:4,desc:'所有爆炸范围 +30%'},
   {id:'P4',w:'mage',s:'火法',name:'燃焰',max:4,desc:'火焰伤害点燃敌人，2秒内持续灼烧'},
   {id:'P6',w:'mage',s:'火法',name:'爆燃连锁',max:1,req:'P4',desc:'燃烧中的敌人死亡时引发一次爆炸'},
-  {id:'P5',w:'mage',s:'火法',name:'陨星术',max:1,key:1,desc:'翻滚后你的下一发火球召唤陨石砸向目标，大范围高伤'},
+  {id:'P7',w:'mage',s:'火法',name:'炽焰精通',max:5,desc:'火焰/爆炸伤害 +1'},
+  {id:'P5',w:'mage',s:'火法',name:'陨星术',max:1,key:1,desc:'【Q】召唤陨石砸向目标，大范围高伤(冷却5秒)'},
   // ===== 法师·冰法 =====
   {id:'I1',w:'mage',s:'冰法',name:'冰川蔓延',max:1,tag:'primary',desc:'主攻击变为冰川：冰锥沿地面向前蔓延，穿透并减速敌人'},
   {id:'I2',w:'mage',s:'冰法',name:'霜寒刺骨',max:8,desc:'你对被减速敌人的伤害 +1'},
   {id:'I3',w:'mage',s:'冰法',name:'冰封领域',max:4,req:'I1',desc:'冰川蔓延变宽：两侧各+1列'},
   {id:'I4',w:'mage',s:'冰法',name:'冻牢',max:1,desc:'被冰属性击中3次的敌人冻结2秒'},
   {id:'I6',w:'mage',s:'冰法',name:'极寒',max:3,desc:'减速效果更强、持续更久'},
-  {id:'I5',w:'mage',s:'冰法',name:'暴风雪',max:1,key:1,desc:'翻滚时以自身为中心刮起暴风雪，持续伤害并减速周围敌人'},
+  {id:'I7',w:'mage',s:'冰法',name:'寒锋精通',max:5,desc:'冰川伤害 +1'},
+  {id:'I5',w:'mage',s:'冰法',name:'暴风雪',max:1,key:1,desc:'【Q】以自身为中心刮起暴风雪，持续伤害减速(冷却6秒)'},
   // ===== 法师·奥术流 =====
   {id:'U1',w:'mage',s:'奥术流',name:'奥术涌动',max:1,tag:'primary',desc:'主攻变为奥术飞弹：穿透敌人，命中后分裂成2颗追加弹'},
   {id:'U2',w:'mage',s:'奥术流',name:'秘能灌注',max:8,desc:'奥术伤害 +1'},
   {id:'U3',w:'mage',s:'奥术流',name:'法力奔涌',max:2,desc:'法力上限+25、回复加快、奥术耗蓝减少'},
-  {id:'U4',w:'mage',s:'奥术流',name:'奥术奇点',max:1,key:1,desc:'翻滚时在落点形成奇点，吸引并持续灼伤周围敌人'},
+  {id:'U4',w:'mage',s:'奥术流',name:'奥术奇点',max:1,key:1,desc:'【Q】在目标处形成奇点，吸引并持续灼伤敌人(冷却7秒)'},
   // ===== 游侠·弓流 =====
   {id:'A1',w:'ranger',s:'弓流',name:'贯穿箭',max:1,desc:'满蓄力的箭矢穿透所有敌人'},
   {id:'A2',w:'ranger',s:'弓流',name:'多重射击',max:4,desc:'射击时额外发射1支侧向箭'},
   {id:'A3',w:'ranger',s:'弓流',name:'迅捷蓄力',max:4,desc:'蓄力速度 +35%'},
   {id:'A4',w:'ranger',s:'弓流',name:'锐利',max:8,desc:'箭矢伤害 +1'},
   {id:'A6',w:'ranger',s:'弓流',name:'弹射箭',max:2,desc:'箭矢命中后弹射到附近的另一名敌人'},
+  {id:'A7',w:'ranger',s:'弓流',name:'强弓',max:5,desc:'箭矢伤害 +1'},
   {id:'A5',w:'ranger',s:'弓流',name:'箭雨',max:1,key:1,desc:'满蓄力射击时，天降箭雨轰击目标区域'},
   // ===== 游侠·匕首流 =====
   {id:'D1',w:'ranger',s:'匕首流',name:'影遁',max:1,desc:'翻滚后进入隐身1.5秒，敌人失去你的踪迹'},
@@ -276,6 +281,7 @@ const TALENTS=[
   {id:'D3',w:'ranger',s:'匕首流',name:'轻功',max:4,desc:'移动速度 +12%'},
   {id:'D4',w:'ranger',s:'匕首流',name:'淬毒',max:4,desc:'匕首命中使敌人中毒，持续掉血'},
   {id:'D6',w:'ranger',s:'匕首流',name:'毒爆',max:1,req:'D4',desc:'中毒的敌人死亡时喷出毒雾，感染周围敌人'},
+  {id:'D7',w:'ranger',s:'匕首流',name:'剧毒',max:3,req:'D4',desc:'中毒每秒伤害 +1'},
   {id:'D5',w:'ranger',s:'匕首流',name:'影舞',max:1,req:'D2',key:1,desc:'背刺击杀立即重置翻滚冷却并再次隐身'},
   // ===== 游侠·陷阱流 =====
   {id:'R1',w:'ranger',s:'陷阱流',name:'诡雷',max:1,desc:'翻滚时在原地埋下地雷，敌人靠近即引爆'},
@@ -287,6 +293,9 @@ const TALENTS=[
   {id:'G2',w:'all',s:'通用',name:'疾行',max:4,desc:'移动速度 +10%'},
   {id:'G3',w:'all',s:'通用',name:'聚宝',max:4,desc:'拾取范围扩大，敌人掉落更多金币'},
   {id:'G6',w:'all',s:'通用',name:'血色收割',max:3,desc:'敌人掉落生命的几率提高'},
+  {id:'G7',w:'all',s:'通用',name:'寻宝',max:3,desc:'敌人掉落金币 +1'},
+  {id:'G8',w:'all',s:'通用',name:'博学',max:3,desc:'获得经验 +25%'},
+  {id:'G9',w:'all',s:'通用',name:'荆棘之甲',max:3,desc:'受到接触伤害时，向攻击者反弹伤害'},
   {id:'G5',w:'all',s:'通用',name:'金身不灭',max:1,key:1,desc:'每层一次：受到致命伤害时不会死亡，而是保留1点生命'},
   // ===== 觉醒（该武器投入≥8点后解锁的终极天赋，每周目每武器限一次）=====
   {id:'AW_H',w:'hammer',s:'觉醒',name:'战神觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
@@ -416,7 +425,7 @@ function genFloor(fl){
       const ow=ri(1,2),oh=ri(1,2);
       const ox=R.x+3+ri(0,R.w-6-ow),oy=R.y+3+ri(0,R.h-6-oh);
       if(R.type==='boss'&&Math.abs(ox+ow/2-(R.x+R.w/2))<3.5&&Math.abs(oy+oh/2-(R.y+R.h/2))<3.5)continue;
-      for(let y=oy;y<oy+oh;y++)for(let x=ox;x<ox+ow;x++)map[y*MW+x]=0;
+      for(let y=oy;y<oy+oh;y++)for(let x=ox;x<ox+ow;x++)map[y*MW+x]=2;// 2=室内障碍(石柱),渲染更醒目
     }
     // 炸药桶：挨打就爆，连锁殉爆，敌我皆伤
     const nb=R.type==='boss'?2:ri(2,3);
@@ -451,7 +460,7 @@ function solid(px,py){
   }
   const tx=px/T|0,ty=py/T|0;
   if(tx<0||ty<0||tx>=MW||ty>=MH)return true;
-  return map[ty*MW+tx]===0;
+  return map[ty*MW+tx]!==1;// 0=墙 2=障碍 均为实心
 }
 function moveEnt(e,dx,dy){
   const r=e.r;
@@ -496,7 +505,7 @@ function moveSpeed(){
 function pickR(){return 34+22*tc('G3')+10*META.up.luck;}
 function heal(n){const b=player.hp;player.hp=clamp(player.hp+n,0,player.maxhp);if(player.hp>b){fText(player.x,player.y-12,'+'+(player.hp-b),'#6ee87a');SFX.heart();}}
 function giveXp(n){
-  run.xp+=n;
+  run.xp+=n*(1+0.25*tc('G8'));
   while(run.xp>=run.xpNeed){run.xp-=run.xpNeed;run.level++;run.xpNeed=6+4*(run.level-1);run.pending++;SFX.lvl();fText(player.x,player.y-16,'升级！','#ffe066');}
 }
 
@@ -571,7 +580,7 @@ function killEnemy(e){
   // 掉落（精英翻倍 + 必掉心）
   const orbs=e.xp;
   for(let i=0;i<orbs;i++)pickups.push({t:'xp',x:e.x,y:e.y,vx:rnd(-60,60),vy:rnd(-60,60),v:1});
-  const nc=ri(1,2)+(tc('G3')?ri(1,1+tc('G3')):0)+(e.boss?20:0)+(e.elite?8:0);
+  const nc=ri(1,2)+tc('G7')+(tc('G3')?ri(1,1+tc('G3')):0)+(e.boss?20:0)+(e.elite?8:0);
   for(let i=0;i<nc;i++)pickups.push({t:'coin',x:e.x,y:e.y,vx:rnd(-70,70),vy:rnd(-70,70),v:1});
   if(e.boss||e.elite||Math.random()<0.10+0.08*tc('G6'))pickups.push({t:'heart',x:e.x,y:e.y,vx:rnd(-40,40),vy:rnd(-40,40),v:1});
   // 影舞：背刺击杀重置
@@ -614,6 +623,7 @@ function tryBlock(sx,sy,d,src){
 function damagePlayer(d,sx,sy,src){
   if(state!=='play')return;
   if(player.inv>0||player.roll>0)return;
+  if(tc('G9')&&src&&!src.dead&&!src.boss)dmgEnemy(src,2*tc('G9'),{fromPlayer:true,dot:true,col:'#8ad0a0'}); // 荆棘之甲反弹
   if(tryBlock(sx,sy,d,src))return;
   if(player.armor>0){player.armor--;fText(player.x,player.y-12,'护甲!','#aab4c2');SFX.block();return;}
   if(player.shield>0){player.shield--;fText(player.x,player.y-12,'护盾!','#4ab8e8');SFX.block();return;}
@@ -642,7 +652,7 @@ function tryAttack(){
     swing={t:0,dur:0.2,dir:aim,rng,col:'#e0c080',wide:PI*1.5};
     SFX.swing();
     let hits=0,hx=0,hy=0;
-    meleeHit(aim,rng,PI*1.5,3+tc('W2')+run.shopDmg,240,e=>{hits++;hx=e.x;hy=e.y;});
+    meleeHit(aim,rng,PI*1.5,3+tc('W2')+tc('W7')+run.shopDmg,240,e=>{hits++;hx=e.x;hy=e.y;});
     if(hits>0){
       freeze=Math.max(freeze,0.09);shake=Math.max(shake,7);SFX.hit();hitFlash(0.4,'#ffe0a0');
       // 命中冲击波环
@@ -654,15 +664,11 @@ function tryAttack(){
         if(player.staticHits>=Math.max(2,4-tc('L3'))){player.staticHits=0;
           for(let z=0;z<3;z++)zapChain(player.x,player.y,1,2+run.shopDmg,0);
           parts.push({x:player.x,y:player.y,vx:0,vy:0,life:0.2,size:40,col:'rgba(168,224,255,.5)',ring:true});}}
-      // L4 雷霆万钧：翻滚蓄能后的这一击引落雷
-      if(tc('L4')&&player.thunderArmed){player.thunderArmed=0;
-        bolts.push({x1:hx,y1:hy-60,x2:hx,y2:hy,life:0.22,big:1});SFX.boom();
-        hazards.push({x:hx,y:hy,r:34,delay:0.12,life:0.3,dmg:8+run.shopDmg,tags:['shock'],col:'#a8e0ff',kind:'thunder'});}
     }
     if(tc('W5'))projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*150,vy:Math.sin(aim)*150,r:7,dmg:2+run.shopDmg,type:'shock',from:'p',life:0.65,pierce:true,hitSet:new Set()});
   }else if(w==='sword'){
     const low=player.hp*3<=player.maxhp;
-    player.cd=0.22/((1+0.15*tc('B2'))*(1+0.1*tc('E2'))*(low&&tc('B4')?1.4:1));
+    player.cd=0.22/((1+0.15*tc('B2'))*(1+0.10*tc('B7'))*(1+0.1*tc('E2'))*(low&&tc('B4')?1.4:1));
     if(gtime-(player.comboLast||0)>1.2)player.combo=0; // 停手1.2秒重置连击
     player.comboLast=gtime;
     player.combo=(player.combo||0)+1;
@@ -703,11 +709,7 @@ function tryAttack(){
       projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*(enh?230:200),vy:Math.sin(aim)*(enh?230:200),r:enh?4:3,dmg:adm,type:'arcane',from:'p',life:1.6,pierce:enh,split:enh?2:0,hitSet:enh?new Set():undefined});
     }else if(primary==='fire'){
       player.cd=0.5;SFX.fire();
-      projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*170,vy:Math.sin(aim)*170,r:4,dmg:(2+run.shopDmg)*stealthMul,type:'fire',from:'p',life:1.8});
-      // P5 陨星术：翻滚蓄能后的这发火球召唤陨石砸向目标
-      if(tc('P5')&&player.meteorArmed){player.meteorArmed=0;
-        const mt=player.target,mtx=mt?mt.x:player.x+Math.cos(aim)*70,mty=mt?mt.y:player.y+Math.sin(aim)*70;
-        hazards.push({x:mtx,y:mty,r:36*(1+0.3*tc('P3')),delay:0.55,life:0.3,dmg:7+run.shopDmg,tags:['fire'],col:'#ff8040',kind:'meteor'});}
+      projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*170,vy:Math.sin(aim)*170,r:4,dmg:(2+run.shopDmg+tc('P7'))*stealthMul,type:'fire',from:'p',life:1.8});
     }else{
       player.cd=0.55;SFX.ice();
       const wdt=tc('I3');
@@ -716,7 +718,7 @@ function tryAttack(){
           const perp=aim+PI/2;
           hazards.push({x:player.x+Math.cos(aim)*seg*15+Math.cos(perp)*row*13,
             y:player.y+Math.sin(aim)*seg*15+Math.sin(perp)*row*13,
-            r:10,delay:seg*0.055,life:0.5,dmg:(1+run.shopDmg)*stealthMul,tags:['ice'],col:'#9fe0ff',kind:'ice'});
+            r:10,delay:seg*0.055,life:0.5,dmg:(1+run.shopDmg+tc('I7'))*stealthMul,tags:['ice'],col:'#9fe0ff',kind:'ice'});
         }
       }
     }
@@ -728,7 +730,7 @@ function tryAttack(){
       let hits=0;
       meleeHit(aim,16,PI*0.6,(1+run.shopDmg)*stealthMul,60,e=>{
         hits++;
-        if(tc('D4')){e.poisonT=2;e.poisonD=tc('D4');}
+        if(tc('D4')){e.poisonT=2;e.poisonD=tc('D4')+tc('D7');}
       },{melee:true,stealthHit:wasStealth});
       if(hits>0){SFX.hit();if(wasStealth&&tc('D2'))fText(player.x,player.y-16,'背刺!','#b090ff');}
       if(wasStealth)player.stealth=0;
@@ -759,7 +761,7 @@ function releaseBow(){
   player.cd=c<0.35?0.3:0.2; // 速点惩罚：没蓄力的轻射冷却更长
   const aim=player.aim;
   const stealthMul=(player.stealth>0&&tc('D2'))?3:1;
-  const base=(1+Math.round(6*c))+tc('A4')+run.shopDmg; // 蓄力连续放大：1(速点)→7(蓄满)
+  const base=(1+Math.round(6*c))+tc('A4')+tc('A7')+run.shopDmg; // 蓄力连续放大：1(速点)→7(蓄满)
   const pierce=c>=1&&tc('A1')>0;
   const spd=220+200*c;
   const shots=[0];
@@ -1214,6 +1216,21 @@ function burst(x,y,n,col){
 }
 function fText(x,y,txt,col,sc){texts.push({x,y,txt:''+txt,col,life:0.9,sc:sc||1});}
 
+/* 释放键石主动技能（Q键）：拥有的每个键石独立冷却 */
+function castSkills(){
+  const P=player;let cast=false,has=false;
+  const tgt=P.target,tx=tgt?tgt.x:P.x+Math.cos(P.aim)*60,ty=tgt?tgt.y:P.y+Math.sin(P.aim)*60;
+  if(tc('P5')){has=true;if(P.meteorCd<=0){P.meteorCd=5;cast=true;
+    hazards.push({x:tx,y:ty,r:36*(1+0.3*tc('P3')),delay:0.55,life:0.3,dmg:7+run.shopDmg,tags:['fire'],col:'#ff8040',kind:'meteor'});}}
+  if(tc('I5')){has=true;if(P.blizzCd<=0){P.blizzCd=6;cast=true;blizzard={t:3,tick:0};SFX.ice();}}
+  if(tc('L4')){has=true;if(P.thunderCd<=0){P.thunderCd=5;cast=true;
+    bolts.push({x1:tx,y1:ty-60,x2:tx,y2:ty,life:0.22,big:1});SFX.boom();
+    hazards.push({x:tx,y:ty,r:34,delay:0.12,life:0.3,dmg:8+run.shopDmg,tags:['shock'],col:'#a8e0ff',kind:'thunder'});}}
+  if(tc('U4')){has=true;if(P.singCd<=0){P.singCd=7;cast=true;
+    hazards.push({x:tx,y:ty,r:52,delay:0,life:1.8,dmg:1,tags:[],col:'#b088ff',kind:'singularity',tick:0});}}
+  if(cast){SFX.card();fText(P.x,P.y-16,'技能!','#ffe066');shake=Math.max(shake,3);}
+  else if(!has)fText(P.x,P.y-14,'尚无主动技能','#8a8098');
+}
 /* ================= 主更新 ================= */
 function update(dt){
   gtime+=dt;
@@ -1249,23 +1266,27 @@ function update(dt){
   let my=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);
   const ml=Math.hypot(mx,my);
   if(ml>0){mx/=ml;my/=ml;P.rdx=mx;P.rdy=my;P.walk+=dt*8;if(!P.target)P.aim=Math.atan2(my,mx);}
-  // 翻滚（键石现由翻滚触发/蓄能，而非每几秒自动）
+  // 翻滚：纯闪避位移（不再绑定键石技能）
   if(pressed.Space&&P.rollcd<=0&&P.roll<=0){
     P.roll=0.18;P.rollcd=0.7;SFX.stealth();
     if(ml===0){P.rdx=Math.cos(P.aim);P.rdy=Math.sin(P.aim);}
     burst(P.x,P.y,6,'#b0c0d0');
-    if(tc('R1')){const nm=tc('R3');for(let i=0;i<=nm;i++)dropMine(P.x+rnd(-6,6),P.y+rnd(-6,6));} // 诡雷
-    if(tc('P5')){P.meteorArmed=1;fText(P.x,P.y-16,'陨星待发','#ff9040');} // 翻滚后下发火球召唤陨石
-    if(tc('L4')){P.thunderArmed=1;fText(P.x,P.y-16,'引雷待发','#a8e0ff');} // 翻滚后下次锤击引落雷
-    if(tc('I5')){blizzard={t:3,tick:0};SFX.ice();} // 翻滚爆发暴风雪
-    if(tc('U4')){hazards.push({x:P.x,y:P.y,r:52,delay:0,life:1.8,dmg:1,tags:[],col:'#b088ff',kind:'singularity',tick:0});} // 翻滚生成奇点
+    if(tc('R1')){const nm=tc('R3');for(let i=0;i<=nm;i++)dropMine(P.x+rnd(-6,6),P.y+rnd(-6,6));} // 诡雷仍绑翻滚(埋雷是走位型)
   }
+  // 技能冷却递减
+  P.meteorCd=Math.max(0,(P.meteorCd||0)-dt);P.blizzCd=Math.max(0,(P.blizzCd||0)-dt);
+  P.thunderCd=Math.max(0,(P.thunderCd||0)-dt);P.singCd=Math.max(0,(P.singCd||0)-dt);
+  // Q / Shift+右键：释放键石技能（拥有的每个都独立冷却）
+  if(pressed.KeyQ)castSkills();
   if(P.roll>0){
     P.roll-=dt;
     moveEnt(P,P.rdx*moveSpeed()*3.2*dt,P.rdy*moveSpeed()*3.2*dt);
     if(P.roll<=0&&run.weapon==='ranger'&&tc('D1')){P.stealth=1.5;SFX.stealth();}
   }else if(ml>0){
-    moveEnt(P,mx*moveSpeed()*dt,my*moveSpeed()*dt);
+    const sprint=(keys.ShiftLeft||keys.ShiftRight)?1.5:1; // Shift 疾跑
+    if(sprint>1&&(Math.abs(mx)>0.01||Math.abs(my)>0.01)&&Math.random()<0.4)parts.push({x:P.x,y:P.y+4,vx:-mx*20,vy:-my*20,life:0.2,size:1.5,col:'#8a94a8',streak:true});
+    moveEnt(P,mx*moveSpeed()*sprint*dt,my*moveSpeed()*sprint*dt);
+    P.walk+=dt*8*(sprint-0.999);
   }
   // 攻击
   if(run.weapon==='ranger'&&P.sub==='bow'){
@@ -1523,6 +1544,13 @@ function drawWorld(){
       ctx.fillStyle=h2(x,y)<0.12?pal.flD:pal.fl;
       ctx.fillRect(px,py,T,T);
       if(h2(x*3,y*7)<0.05){ctx.fillStyle=pal.flD;ctx.fillRect(px+4,py+6,3,1);}
+    }else if(t===2){ // 室内障碍：明显的石柱(先铺地板再立柱，亮顶+暗轮廓，强对比)
+      ctx.fillStyle=pal.fl;ctx.fillRect(px,py,T,T);
+      ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(px+2,py+T-3,T-4,3); // 投影
+      ctx.fillStyle='#0a0812';ctx.fillRect(px+1,py,T-2,T-2); // 暗轮廓
+      ctx.fillStyle='#6f6a86';ctx.fillRect(px+2,py+1,T-4,T-4); // 石身
+      ctx.fillStyle='#9c96b6';ctx.fillRect(px+2,py+1,T-4,2); // 顶部高光
+      ctx.fillStyle='#4a4560';ctx.fillRect(px+2,py+T-4,T-4,1);
     }else{
       ctx.fillStyle=pal.wa;ctx.fillRect(px,py,T,T);
       if(y+1<MH&&map[(y+1)*MW+x]===1){ctx.fillStyle=pal.waF;ctx.fillRect(px,py+6,T,T-6);ctx.fillStyle=pal.waE;ctx.fillRect(px,py+4,T,2);}
@@ -1904,8 +1932,13 @@ function drawUI(){
   // 键石冷却
   let kx=100;
   ctx.font='8px monospace';
-  if(P.meteorArmed){ctx.fillStyle='#ff9040';ctx.fillText('陨星待发',kx,VH-8);kx+=42;}
-  if(P.thunderArmed){ctx.fillStyle='#a8e0ff';ctx.fillText('引雷待发',kx,VH-8);kx+=42;}
+  // Q技能冷却
+  const SK=[['P5','陨',P.meteorCd,'#ff9040'],['I5','雪',P.blizzCd,'#9fe0ff'],['L4','雷',P.thunderCd,'#a8e0ff'],['U4','奇',P.singCd,'#c090ff']];
+  let hasSkill=false;
+  for(const[id,gl,cd,col]of SK){if(!tc(id))continue;hasSkill=true;
+    const ready=(cd||0)<=0;ctx.fillStyle=ready?col:'#5a5468';
+    ctx.fillText(gl+(ready?'✓':Math.ceil(cd)),kx,VH-8);kx+=24;}
+  if(hasSkill){ctx.fillStyle='#7a7090';ctx.fillText('[Q]',kx,VH-8);kx+=22;}
   if(P.buffAtk>0){ctx.fillStyle='#ff7060';ctx.fillText('狂暴'+Math.ceil(P.buffAtk),kx,VH-8);kx+=34;}
   if(P.stealth>0){ctx.fillStyle='#b090ff';ctx.fillText('隐身',kx,VH-8);}
   // 金币/层数
@@ -2070,7 +2103,7 @@ function drawTitle(){
     else{ctx.fillStyle=afford?'#c8a8ff':'#6a5a80';ctx.fillText('✦'+c,x+nw/2,y+23);}
   });
   ctx.font='8px monospace';ctx.fillStyle='#6a6088';
-  ctx.fillText('死亡按最深层数获得魂 · 点击节点永久强化 · WASD移动/左键攻击(自动瞄准)/右键流派技/空格翻滚/E交互',VW/2,VH-20);
+  ctx.fillText('死亡获得魂·点节点永久强化  |  WASD移动 · Shift疾跑 · 左键攻击 · 右键流派技 · 空格翻滚 · Q技能 · E交互',VW/2,VH-20);
   ctx.fillStyle=(gtime%1<0.6)?'#ffe066':'#806840';
   ctx.fillText('—— 点击武器卡开始冒险 ——',VW/2,VH-8);
 }
