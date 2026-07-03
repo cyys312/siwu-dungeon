@@ -2,6 +2,8 @@
 
 2D 像素风地牢探险 Roguelite。**单文件、零依赖**，浏览器直接可玩。
 
+🎮 **在线试玩：<https://cyys312.github.io/siwu-dungeon/>**
+
 ## 怎么玩
 
 双击 [index.html](index.html) 用浏览器打开即可（Chrome/Edge 均可）。
