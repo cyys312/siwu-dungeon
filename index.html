@@ -372,15 +372,17 @@ function genFloor(fl){
   for(let i=mid.length-1;i>0;i--){const j=ri(0,i);[mid[i],mid[j]]=[mid[j],mid[i]];}
   rooms[mid[0]].type='chest';rooms[mid[0]].cleared=true;
   rooms[mid[1]].type='shop';rooms[mid[1]].cleared=true;
+  // 挑战房：第2层起有概率把一个中段房设为全精英挑战房，清房大奖
+  if(fl>=2&&mid.length>2&&Math.random()<0.6)rooms[mid[2]].type='challenge';
   // 摆放宝箱与商店
   const cr=rooms[mid[0]];
   chests.push({x:(cr.x+cr.w/2)*T,y:(cr.y+cr.h/2)*T,open:false});
   const sr=rooms[mid[1]];
   const items=shopRoll();
   for(let i=0;i<3;i++)pedestals.push({x:(sr.x+sr.w/2+(i-1)*2.2)*T,y:(sr.y+sr.h/2)*T,item:items[i],sold:false});
-  // 障碍物掩体（战斗/Boss房）：四周留3格环带保证连通，Boss房中心留空
+  // 障碍物掩体（战斗/挑战/Boss房）：四周留3格环带保证连通，Boss房中心留空
   for(const R of rooms){
-    if(R.type!=='combat'&&R.type!=='boss')continue;
+    if(R.type!=='combat'&&R.type!=='boss'&&R.type!=='challenge')continue;
     const n=ri(3,5);
     for(let i=0;i<n;i++){
       const ow=ri(1,2),oh=ri(1,2);
@@ -509,12 +511,20 @@ function killEnemy(e){
     burst(e.x,e.y,10,'#80e060');
     for(const m of enemies)if(!m.dead&&!m.barrel&&dist(m.x,m.y,e.x,e.y)<44){m.poisonT=2.5;m.poisonD=Math.max(1,e.poisonD||1);}
   }
-  // 掉落
+  // 精英死亡词缀效果
+  if(e.elite){
+    if(e.affixes.includes('volatile'))explodeAt(e.x,e.y,4,24);
+    if(e.affixes.includes('splitter')){
+      for(let i=0;i<2;i++){const[mx,my]=roomPos(e.x+rnd(-14,14),e.y+rnd(-14,14));
+        const m=makeEnemy(e.type,mx,my);m.hp=m.maxhp=Math.max(2,Math.round(e.maxhp*0.28));enemies.push(m);burst(mx,my,6,'#a445e0');}
+    }
+  }
+  // 掉落（精英翻倍 + 必掉心）
   const orbs=e.xp;
   for(let i=0;i<orbs;i++)pickups.push({t:'xp',x:e.x,y:e.y,vx:rnd(-60,60),vy:rnd(-60,60),v:1});
-  const nc=ri(1,2)+(tc('G3')?ri(1,1+tc('G3')):0)+(e.boss?20:0);
+  const nc=ri(1,2)+(tc('G3')?ri(1,1+tc('G3')):0)+(e.boss?20:0)+(e.elite?8:0);
   for(let i=0;i<nc;i++)pickups.push({t:'coin',x:e.x,y:e.y,vx:rnd(-70,70),vy:rnd(-70,70),v:1});
-  if(Math.random()<(e.boss?1:0.10+0.08*tc('G6')))pickups.push({t:'heart',x:e.x,y:e.y,vx:rnd(-40,40),vy:rnd(-40,40),v:1});
+  if(e.boss||e.elite||Math.random()<0.10+0.08*tc('G6'))pickups.push({t:'heart',x:e.x,y:e.y,vx:rnd(-40,40),vy:rnd(-40,40),v:1});
   // 影舞：背刺击杀重置
   if(e.lastHitStealth&&tc('D5')){player.rollcd=0;player.stealth=1;fText(player.x,player.y-14,'影舞!','#b090ff');}
   // R4 天罗地网：击杀敌人在其位置留下一颗地雷
@@ -682,7 +692,9 @@ function meleeHit(aim,rng,arc,dmg,kb,onHit,opts){
   for(const e of enemies){
     if(e.dead)continue;
     const dx=e.x-player.x,dy=e.y-player.y,d=Math.hypot(dx,dy)||1;
-    if(d<rng+e.r&&Math.abs(angDiff(Math.atan2(dy,dx),aim))<arc/2){
+    // 贴脸(距玩家很近)时无视扇形角度360°必中，解决重叠/背后打不到
+    const pointBlank=d<e.r+14;
+    if(d<rng+e.r&&(pointBlank||Math.abs(angDiff(Math.atan2(dy,dx),aim))<arc/2)){
       if(d>20&&solid((player.x+e.x)/2,(player.y+e.y)/2))continue; // 隔墙不可击中（贴脸不受阻）
       e.lastHitStealth=!!(opts&&opts.stealthHit); // 必须在伤害结算前写入，否则击杀那一下读不到
       dmgEnemy(e,dmg,Object.assign({kx:dx/d*kb,ky:dy/d*kb,melee:true},opts||{}));
@@ -708,6 +720,9 @@ function releaseBow(){
       r:2.5+2*c,dmg:(i===0?base:Math.max(1,base-1))*stealthMul,type:'arrow',from:'p',life:1.3,pierce,bounce:pierce?0:tc('A6'),hitSet:new Set()});
   });
   SFX.shoot();
+  // 点射保底：贴脸/背后重叠的敌人直接命中一发，避免箭矢擦过
+  for(const e of enemies){if(e.dead||e.barrel)continue;
+    if(dist(e.x,e.y,player.x,player.y)<e.r+14){dmgEnemy(e,base*stealthMul,{col:'#d8e8c8',kx:Math.cos(aim)*80,ky:Math.sin(aim)*80});break;}}
   if(c>=1&&tc('A5')){
     const rt=player.target,tx=rt?rt.x:player.x+Math.cos(aim)*90,ty=rt?rt.y:player.y+Math.sin(aim)*90;
     for(let i=0;i<5;i++)hazards.push({x:tx+rnd(-20,20),y:ty+rnd(-20,20),r:11,delay:0.45+i*0.07,life:0.4,dmg:2+run.shopDmg,tags:[],col:'#c8f0a0',kind:'rain'});
@@ -772,6 +787,21 @@ function makeBarrel(x,y){
     spr:sprBarrel,flash:0,dead:false,slowT:0,frozen:0,stun:0,burnT:0,burnAcc:0,
     poisonT:0,poisonAcc:0,iceHits:0,wt:0,wa:0,touchCd:0,kbMul:0};
 }
+const AFFIX={
+  swift:{name:'迅捷',col:'#6cf0c0'}, volatile:{name:'殉爆',col:'#ff8040'},
+  splitter:{name:'分裂',col:'#c060e0'}, regen:{name:'再生',col:'#5ce85c'}, brute:{name:'蛮力',col:'#e0a040'},
+};
+function makeElite(e,fl){
+  e.elite=true;e.affixes=[];
+  const keys=Object.keys(AFFIX),n=fl>=5?2:1;
+  for(let i=0;i<n;i++){const k=keys[ri(0,keys.length-1)];if(!e.affixes.includes(k))e.affixes.push(k);}
+  e.hp=e.maxhp=Math.round(e.maxhp*1.9);
+  e.r+=1;e.xp=(e.xp||2)+3;e.kbMul=(e.kbMul===undefined?1:e.kbMul)*0.6;
+  if(e.affixes.includes('swift'))e.spd*=1.6;
+  if(e.affixes.includes('brute')){e.hp=e.maxhp=Math.round(e.maxhp*1.35);e.touch=(e.touch||1)+1;e.r+=1;}
+  e.eliteCol=AFFIX[e.affixes[0]].col;
+  return e;
+}
 function spawnRoomEnemies(R){
   const fl=run.floor;
   const n=Math.min(18,6+fl+ri(0,3));
@@ -779,6 +809,8 @@ function spawnRoomEnemies(R){
     2:[['slime',.3],['bat',.25],['skel',.25],['ghost',.2]],
     3:[['slime',.22],['bat',.2],['skel',.25],['ghost',.18],['imp',.15]]};
   const tab=tables[Math.min(fl,3)];
+  const challenge=R.type==='challenge';
+  let eliteCount=0,maxElite=challenge?99:1+Math.floor(fl/3);
   for(let i=0;i<n;i++){
     let x,y,tries=0;
     do{x=(R.x+1.5+rnd(0,R.w-3))*T;y=(R.y+1.5+rnd(0,R.h-3))*T;tries++;}
@@ -786,8 +818,12 @@ function spawnRoomEnemies(R){
     let r=Math.random(),ty=tab[0][0];
     for(const[nm,p]of tab){if(r<p){ty=nm;break;}r-=p;}
     const e=makeEnemy(ty,x,y);
+    // 精英：挑战房全精英，普通房按层数概率
+    if(!e.barrel&&(challenge||(fl>=2&&eliteCount<maxElite&&Math.random()<Math.min(0.35,0.05+0.035*fl)))){
+      makeElite(e,fl);eliteCount++;
+    }
     enemies.push(e);
-    burst(x,y,8,'#7060a0');
+    burst(x,y,8,e.elite?e.eliteCol:'#7060a0');
   }
 }
 function spawnBoss(R){
@@ -817,6 +853,7 @@ function enemyUpdate(e,dt){
   if(e.burnT>0){e.burnT-=dt;e.burnAcc+=dt;if(e.burnAcc>=1){e.burnAcc-=1;dmgEnemy(e,e.burnD,{fromPlayer:true,col:'#ff8040',kx:0,ky:0});if(e.dead)return;}}
   if(e.poisonT>0){e.poisonT-=dt;e.poisonAcc+=dt;if(e.poisonAcc>=1){e.poisonAcc-=1;dmgEnemy(e,e.poisonD,{fromPlayer:true,col:'#80e060',kx:0,ky:0});if(e.dead)return;}}
   if(e.echoT>0){e.echoT-=dt;if(e.echoT<=0){burst(e.x,e.y,6,'#e0c080');dmgEnemy(e,e.echoD,{fromPlayer:true,col:'#e0c080'});if(e.dead)return;}} // 余震
+  if(e.elite&&e.affixes.includes('regen')&&e.hp<e.maxhp&&e.hp>0)e.hp=Math.min(e.maxhp,e.hp+2*dt); // 精英再生
   if(e.barrel)return; // 炸药桶无AI（但DoT可以引爆它）
   // 卡墙自救：被击退/意外嵌进掩体时，朝所在房间中心方向挤出来，避免"打不到的墙中怪"
   if(!e.phase&&solid(e.x,e.y)){
@@ -1164,9 +1201,10 @@ function update(dt){
   // 房间锁定
   const R=roomAt(P.x,P.y,8);
   if(R&&!R.discovered)R.discovered=true;
-  if(R&&!R.cleared&&!R.locked&&(R.type==='combat'||R.type==='boss')){
+  if(R&&!R.cleared&&!R.locked&&(R.type==='combat'||R.type==='boss'||R.type==='challenge')){
     R.locked=true;lockRoom=R;
-    if(R.type==='combat')spawnRoomEnemies(R);else spawnBoss(R);
+    if(R.type==='boss')spawnBoss(R);else spawnRoomEnemies(R);
+    if(R.type==='challenge')banner={txt:'⚠ 挑战房 ⚠',sub:'全为精英怪 · 通关获厚赏',t:2.4};
     SFX.roar();
   }
   if(lockRoom&&enemies.every(e=>e.dead||e.barrel)){
@@ -1175,6 +1213,11 @@ function update(dt){
     if(LR.type==='combat'){
       run.coins+=5;fText(P.x,P.y-16,'清房 +5金币','#ffe066');SFX.coin();
       if(Math.random()<0.25)pickups.push({t:'heart',x:(LR.x+LR.w/2)*T,y:(LR.y+LR.h/2)*T,vx:0,vy:0,v:1});
+    }else if(LR.type==='challenge'){ // 挑战房大奖：金币+免费天赋+回血
+      run.coins+=30;run.pending++;
+      const cx=(LR.x+LR.w/2)*T,cy=(LR.y+LR.h/2)*T;
+      for(let i=0;i<2;i++)pickups.push({t:'heart',x:cx,y:cy,vx:rnd(-40,40),vy:rnd(-40,40),v:1});
+      banner={txt:'挑战达成！',sub:'+30金币 · 免费天赋 · 回血',t:2.6};SFX.win();
     }
   }
   // 战斗开始时护甲
@@ -1589,12 +1632,20 @@ function drawWorld(){
 function drawEnemy(e){
   const spr=e.spr;
   const sq=e.type==='slime'||e.boss&&e.ai==='slimeking'?1+Math.sin(e.wa||gtime*3)*0.12:1;
+  // 精英光环
+  if(e.elite){
+    ctx.save();ctx.globalCompositeOperation='lighter';
+    ctx.globalAlpha=0.35+0.2*Math.sin(gtime*4);ctx.fillStyle=e.eliteCol;
+    ctx.beginPath();ctx.arc(e.x,e.y-3,e.r+5,0,TAU);ctx.fill();ctx.restore();
+    ctx.strokeStyle=e.eliteCol;ctx.lineWidth=1;
+    ctx.beginPath();ctx.arc(e.x,e.y-3,e.r+4,0,TAU);ctx.stroke();
+  }
   ctx.save();
   ctx.translate(e.x,e.y-(e.z||0));
   if(e.type==='ghost'||e.ai==='lich')ctx.globalAlpha=0.65+0.2*Math.sin(gtime*3);
   if(e.frozen>0)ctx.globalAlpha=0.8;
   const w=spr.width,h=spr.height;
-  const sc=e.boss?2:1;
+  const sc=e.boss?2:e.elite?1.35:1;
   ctx.scale(sc,sc*sq);
   ctx.drawImage(spr,-w/2,-h+4);
   ctx.restore();
@@ -1739,7 +1790,7 @@ function drawUI(){
   ctx.fillStyle='#100c18';ctx.fillRect(mmx-2,mmy-2,mmW+4,mmH+4);
   for(const r of rooms){
     if(!r.discovered)continue;
-    const cols={start:'#4a6a9a',combat:r.cleared?'#3a3348':'#6a4a52',chest:'#9a8040',shop:'#4a7a58',boss:'#8a3040'};
+    const cols={start:'#4a6a9a',combat:r.cleared?'#3a3348':'#6a4a52',chest:'#9a8040',shop:'#4a7a58',boss:'#8a3040',challenge:r.cleared?'#3a3348':'#b06020'};
     ctx.fillStyle=cols[r.type];
     ctx.fillRect(mmx+r.x*sxk,mmy+r.y*syk,Math.max(2,r.w*sxk),Math.max(2,r.h*syk));
   }
