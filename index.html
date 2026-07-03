@@ -216,9 +216,9 @@ const TALENTS=[
   {id:'J5',w:'hammer',s:'重装流',name:'完美格挡',max:1,req:'J1',key:1,desc:'举盾一瞬间(0.25s)内格挡：反弹250%并震晕周围敌人'},
   // ===== 大锤·战士流 =====
   {id:'W1',w:'hammer',s:'战士流',name:'战意护盾',max:1,desc:'挥锤每命中1名敌人获得1层护盾(上限2)，护盾抵挡1次伤害'},
-  {id:'W2',w:'hammer',s:'战士流',name:'势大力沉',max:6,desc:'大锤伤害 +1'},
-  {id:'W3',w:'hammer',s:'战士流',name:'巨人挥击',max:4,desc:'攻击范围 +20%'},
-  {id:'W4',w:'hammer',s:'战士流',name:'狂热',max:6,desc:'攻击速度 +15%'},
+  {id:'W2',w:'hammer',s:'战士流',name:'势大力沉',max:12,desc:'大锤伤害 +1'},
+  {id:'W3',w:'hammer',s:'战士流',name:'巨人挥击',max:6,desc:'攻击范围 +20%'},
+  {id:'W4',w:'hammer',s:'战士流',name:'狂热',max:10,desc:'攻击速度 +15%'},
   {id:'W6',w:'hammer',s:'战士流',name:'余震',max:3,desc:'命中的敌人0.4秒后受到额外的一次震荡伤害'},
   {id:'W5',w:'hammer',s:'战士流',name:'地震波',max:1,key:1,desc:'挥锤向前方释放地裂冲击波，贯穿敌人(获得远程打击)'},
   // ===== 大锤·雷霆流 =====
@@ -228,16 +228,16 @@ const TALENTS=[
   {id:'L4',w:'hammer',s:'雷霆流',name:'雷霆万钧',max:1,key:1,desc:'每6秒天降落雷，轰击最近的敌人'},
   // ===== 长剑·吸血流 =====
   {id:'B1',w:'sword',s:'吸血流',name:'血刃',max:1,desc:'剑刃吸血：每命中5次回复1点生命'},
-  {id:'B2',w:'sword',s:'吸血流',name:'剑舞',max:6,desc:'攻击速度 +15%'},
+  {id:'B2',w:'sword',s:'吸血流',name:'剑舞',max:10,desc:'攻击速度 +15%'},
   {id:'B3',w:'sword',s:'吸血流',name:'三段连击',max:1,desc:'连击的第3斩造成2倍伤害'},
-  {id:'B6',w:'sword',s:'吸血流',name:'利刃',max:4,desc:'长剑伤害 +1'},
+  {id:'B6',w:'sword',s:'吸血流',name:'利刃',max:10,desc:'长剑伤害 +1'},
   {id:'B4',w:'sword',s:'吸血流',name:'血怒',max:1,desc:'生命低于1/3时：攻速+40%，吸血所需命中次数减半'},
   {id:'B5',w:'sword',s:'吸血流',name:'剑气纵横',max:1,key:1,desc:'每次挥剑放出一道穿透剑气，斩碎远处的敌人'},
   // ===== 长剑·御剑流 =====
   {id:'F1',w:'sword',s:'御剑流',name:'御剑术',max:1,desc:'召唤1把飞剑环绕自身，自动飞向附近敌人攻击'},
   {id:'F2',w:'sword',s:'御剑流',name:'剑冢',max:6,req:'F1',desc:'+1把飞剑'},
   {id:'F3',w:'sword',s:'御剑流',name:'疾风剑心',max:4,req:'F1',desc:'飞剑速度与出击频率 +30%'},
-  {id:'F4',w:'sword',s:'御剑流',name:'锋锐',max:4,req:'F1',desc:'飞剑伤害 +1'},
+  {id:'F4',w:'sword',s:'御剑流',name:'锋锐',max:8,req:'F1',desc:'飞剑伤害 +1'},
   {id:'F5',w:'sword',s:'御剑流',name:'万剑诀',max:1,req:'F1',key:1,desc:'飞剑命中后弹射到另一名敌人再次攻击'},
   // ===== 长剑·疾风流 =====
   {id:'E1',w:'sword',s:'疾风流',name:'疾刺',max:1,desc:'每次挥剑向瞄准方向短距突进，穿过敌人'},
@@ -253,21 +253,21 @@ const TALENTS=[
   {id:'P5',w:'mage',s:'火法',name:'陨星术',max:1,key:1,desc:'每8秒在最近敌人处坠落陨石，大范围高额伤害'},
   // ===== 法师·冰法 =====
   {id:'I1',w:'mage',s:'冰法',name:'冰川蔓延',max:1,tag:'primary',desc:'主攻击变为冰川：冰锥沿地面向前蔓延，穿透并减速敌人'},
-  {id:'I2',w:'mage',s:'冰法',name:'霜寒刺骨',max:4,desc:'你对被减速敌人的伤害 +1'},
+  {id:'I2',w:'mage',s:'冰法',name:'霜寒刺骨',max:8,desc:'你对被减速敌人的伤害 +1'},
   {id:'I3',w:'mage',s:'冰法',name:'冰封领域',max:4,req:'I1',desc:'冰川蔓延变宽：两侧各+1列'},
   {id:'I4',w:'mage',s:'冰法',name:'冻牢',max:1,desc:'被冰属性击中3次的敌人冻结2秒'},
   {id:'I6',w:'mage',s:'冰法',name:'极寒',max:3,desc:'减速效果更强、持续更久'},
   {id:'I5',w:'mage',s:'冰法',name:'暴风雪',max:1,key:1,desc:'每7秒以自身为中心刮起暴风雪，持续伤害并减速周围敌人'},
   // ===== 法师·奥术流 =====
   {id:'U1',w:'mage',s:'奥术流',name:'奥术涌动',max:1,tag:'primary',desc:'主攻变为奥术飞弹：穿透敌人，命中后分裂成2颗追加弹'},
-  {id:'U2',w:'mage',s:'奥术流',name:'秘能灌注',max:3,desc:'奥术伤害 +1'},
+  {id:'U2',w:'mage',s:'奥术流',name:'秘能灌注',max:8,desc:'奥术伤害 +1'},
   {id:'U3',w:'mage',s:'奥术流',name:'法力奔涌',max:2,desc:'法力上限+25、回复加快、奥术耗蓝减少'},
   {id:'U4',w:'mage',s:'奥术流',name:'奥术奇点',max:1,key:1,desc:'每7秒在最近敌人处形成奇点，吸引并持续灼伤周围敌人'},
   // ===== 游侠·弓流 =====
   {id:'A1',w:'ranger',s:'弓流',name:'贯穿箭',max:1,desc:'满蓄力的箭矢穿透所有敌人'},
   {id:'A2',w:'ranger',s:'弓流',name:'多重射击',max:4,desc:'射击时额外发射1支侧向箭'},
   {id:'A3',w:'ranger',s:'弓流',name:'迅捷蓄力',max:4,desc:'蓄力速度 +35%'},
-  {id:'A4',w:'ranger',s:'弓流',name:'锐利',max:4,desc:'箭矢伤害 +1'},
+  {id:'A4',w:'ranger',s:'弓流',name:'锐利',max:8,desc:'箭矢伤害 +1'},
   {id:'A6',w:'ranger',s:'弓流',name:'弹射箭',max:2,desc:'箭矢命中后弹射到附近的另一名敌人'},
   {id:'A5',w:'ranger',s:'弓流',name:'箭雨',max:1,key:1,desc:'满蓄力射击时，天降箭雨轰击目标区域'},
   // ===== 游侠·匕首流 =====
@@ -283,7 +283,7 @@ const TALENTS=[
   {id:'R3',w:'ranger',s:'陷阱流',name:'连环雷',max:2,req:'R1',desc:'每次翻滚多埋1颗地雷'},
   {id:'R4',w:'ranger',s:'陷阱流',name:'天罗地网',max:1,req:'R1',key:1,desc:'每5秒自动在附近布设地雷'},
   // ===== 通用 =====
-  {id:'G1',w:'all',s:'通用',name:'生命之泉',max:5,desc:'最大生命 +1，并回复1点生命'},
+  {id:'G1',w:'all',s:'通用',name:'生命之泉',max:10,desc:'最大生命 +1，并回复1点生命'},
   {id:'G2',w:'all',s:'通用',name:'疾行',max:4,desc:'移动速度 +10%'},
   {id:'G3',w:'all',s:'通用',name:'聚宝',max:4,desc:'拾取范围扩大，敌人掉落更多金币'},
   {id:'G6',w:'all',s:'通用',name:'血色收割',max:3,desc:'敌人掉落生命的几率提高'},
@@ -673,17 +673,17 @@ function releaseBow(){
   const c=clamp(player.charge,0,1);
   player.charge=-1;
   if(player.cd>0)return;
-  player.cd=0.2;
+  player.cd=c<0.35?0.3:0.2; // 速点惩罚：没蓄力的轻射冷却更长
   const aim=player.aim;
   const stealthMul=(player.stealth>0&&tc('D2'))?3:1;
-  const base=(c>=1?3:c>=0.5?2:1)+tc('A4')+run.shopDmg;
+  const base=(1+Math.round(6*c))+tc('A4')+run.shopDmg; // 蓄力连续放大：1(速点)→7(蓄满)
   const pierce=c>=1&&tc('A1')>0;
-  const spd=240+140*c;
+  const spd=220+200*c;
   const shots=[0];
   for(let i=1;i<=tc('A2');i++)shots.push(i%2?0.18*Math.ceil(i/2):-0.18*Math.ceil(i/2));
   shots.forEach((off,i)=>{
     projs.push({x:player.x,y:player.y,vx:Math.cos(aim+off)*spd,vy:Math.sin(aim+off)*spd,
-      r:3,dmg:(i===0?base:Math.max(1,base-1))*stealthMul,type:'arrow',from:'p',life:1.3,pierce,bounce:pierce?0:tc('A6'),hitSet:new Set()});
+      r:2.5+2*c,dmg:(i===0?base:Math.max(1,base-1))*stealthMul,type:'arrow',from:'p',life:1.3,pierce,bounce:pierce?0:tc('A6'),hitSet:new Set()});
   });
   SFX.shoot();
   if(c>=1&&tc('A5')){
@@ -1248,13 +1248,17 @@ function update(dt){
   }
   hazards=hazards.filter(h=>!(h.done&&h.life<=0));
   if(state!=='play')return; // 本帧已死亡：禁止拾取/交互/升级把 over 覆盖回 cards
-  // 拾取
+  // 拾取（磁吸：进入范围后朝玩家加速，速度上限远高于任何移速，后期也不会黏在身后）
   for(const k of pickups){
     k.vx*=Math.pow(0.001,dt);k.vy*=Math.pow(0.001,dt);
     k.x+=k.vx*dt;k.y+=k.vy*dt;
     const d=dist(k.x,k.y,P.x,P.y);
-    if(d<pickR()){const a=Math.atan2(P.y-k.y,P.x-k.x);k.x+=Math.cos(a)*160*dt;k.y+=Math.sin(a)*160*dt;}
-    if(d<8){
+    if(d<pickR()){
+      k.mag=Math.min(560,(k.mag||120)+1400*dt); // 加速度磁吸
+      const a=Math.atan2(P.y-k.y,P.x-k.x);
+      k.x+=Math.cos(a)*k.mag*dt;k.y+=Math.sin(a)*k.mag*dt;
+    }else k.mag=120;
+    if(d<10){
       k.dead=true;
       if(k.t==='xp'){giveXp(k.v);SFX.xp();}
       else if(k.t==='coin'){run.coins+=k.v;SFX.coin();}
@@ -1422,8 +1426,18 @@ function drawWorld(){
       if(hz.fromE){ctx.globalAlpha=0.15;ctx.fillStyle=hz.col;ctx.fill();}
       ctx.globalAlpha=1;ctx.lineWidth=1;
     }else if(hz.kind==='ice'){
-      ctx.fillStyle='rgba(160,220,255,'+(hz.life*1.4)+')';
-      ctx.beginPath();ctx.arc(hz.x,hz.y,hz.r*0.8,0,TAU);ctx.fill();
+      // 棱角冰晶：主菱形 + 侧翼碎晶，随机种子固定形态
+      const a=Math.min(1,hz.life*1.6),s=hz.r*0.95;
+      const rot=(hz.seed=hz.seed||h2(hz.x|0,hz.y|0)*TAU);
+      ctx.save();ctx.translate(hz.x,hz.y);ctx.rotate(rot);
+      ctx.fillStyle='rgba(150,210,255,'+(a*0.85)+')';
+      ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(s*0.55,0);ctx.lineTo(0,s);ctx.lineTo(-s*0.55,0);ctx.closePath();ctx.fill();
+      ctx.fillStyle='rgba(210,240,255,'+a+')'; // 高光棱
+      ctx.beginPath();ctx.moveTo(0,-s);ctx.lineTo(s*0.28,-s*0.2);ctx.lineTo(0,s*0.15);ctx.lineTo(-s*0.28,-s*0.2);ctx.closePath();ctx.fill();
+      ctx.fillStyle='rgba(170,220,255,'+(a*0.6)+')'; // 侧翼小晶
+      ctx.beginPath();ctx.moveTo(s*0.5,-s*0.15);ctx.lineTo(s*0.85,s*0.1);ctx.lineTo(s*0.45,s*0.2);ctx.closePath();ctx.fill();
+      ctx.beginPath();ctx.moveTo(-s*0.5,-s*0.15);ctx.lineTo(-s*0.85,s*0.1);ctx.lineTo(-s*0.45,s*0.2);ctx.closePath();ctx.fill();
+      ctx.restore();
     }
   }
   // 地雷
