@@ -1169,11 +1169,19 @@ function genOffer(){
     if(t.awaken&&wInvest<8)continue; // 觉醒需该武器投入≥8点
     pool.push(t);
   }
+  // 权重：武器专属>通用，未拥有的更容易出现(增加新鲜感)，键石/觉醒/机制型加权
+  const wt=t=>{
+    let w=t.w==='all'?1.2:3;
+    if(tc(t.id)===0)w*=2.2;            // 还没拿到的天赋——优先展示，抽卡不再总是重复堆叠
+    if(t.key||t.awaken)w*=1.6;         // 键石/觉醒更吸引
+    if(t.tag==='primary')w*=1.4;
+    return w;
+  };
   const picks=[];
   while(picks.length<3&&pool.length){
-    let tot=0;for(const t of pool)tot+=t.w==='all'?1:3;
+    let tot=0;for(const t of pool)tot+=wt(t);
     let r=Math.random()*tot,idx=0;
-    for(let i=0;i<pool.length;i++){r-=pool[i].w==='all'?1:3;if(r<=0){idx=i;break;}}
+    for(let i=0;i<pool.length;i++){r-=wt(pool[i]);if(r<=0){idx=i;break;}}
     picks.push(pool[idx]);pool.splice(idx,1);
   }
   while(picks.length<3)picks.push(GOLD_CARD);
@@ -2005,6 +2013,8 @@ function drawUI(){
     const ready=(cd||0)<=0;ctx.fillStyle=ready?col:'#5a5468';
     ctx.fillText(gl+(ready?'✓':Math.ceil(cd)),kx,VH-8);kx+=24;}
   if(hasSkill){ctx.fillStyle='#7a7090';ctx.fillText('[Q]',kx,VH-8);kx+=22;}
+  // 武器铸造词条
+  for(const k in run.mods){if(run.mods[k]>0){const m=MODS[k];ctx.fillStyle=m.col;ctx.fillText(m.glyph+run.mods[k],kx,VH-8);kx+=20;}}
   if(P.buffAtk>0){ctx.fillStyle='#ff7060';ctx.fillText('狂暴'+Math.ceil(P.buffAtk),kx,VH-8);kx+=34;}
   if(P.stealth>0){ctx.fillStyle='#b090ff';ctx.fillText('隐身',kx,VH-8);}
   // 金币/层数
@@ -2060,6 +2070,8 @@ function drawCards(){
   ctx.fillStyle='#ffe066';ctx.fillText('✦ 升级！选择一项天赋 ✦',VW/2,52);
   ctx.font='9px monospace';ctx.fillStyle='#8a8098';
   ctx.fillText('剩余选择次数：'+run.pending+'   (点击卡片 或 按 1/2/3)',VW/2,66);
+  ctx.fillStyle=run.coins>=8?'#ffe066':'#6a6078';
+  ctx.fillText('按 R 重摇（8 金币，当前 '+run.coins+'）',VW/2,78);
   const cw=98,chh=116,gap=12;
   const total=offer.length*cw+(offer.length-1)*gap;
   hoverCard=-1;
@@ -2211,6 +2223,7 @@ function frame(now){
     if(pressed.Digit1)pickCard(0);
     if(pressed.Digit2)pickCard(1);
     if(pressed.Digit3)pickCard(2);
+    if(pressed.KeyR&&run.coins>=8){run.coins-=8;offer=genOffer();hoverCard=-1;SFX.card();} // R 花8金重摇
   }else if(state==='over'||state==='win'){
     if(pressed.KeyR||pressed.LMB){state='title';mouse.down=false;}
   }else{
