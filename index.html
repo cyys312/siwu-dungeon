@@ -300,7 +300,7 @@ const GOLD_CARD={id:'GOLD',w:'all',s:'通用',name:'金币袋',max:99,desc:'立�
 let state='title';           // title | play | cards | over | win
 let run=null,player=null;
 let map=null,rooms=[],lockRoom=null;
-let enemies=[],projs=[],parts=[],texts=[],pickups=[],hazards=[],chests=[],pedestals=[],stairsObj=null,bolts=[],mines=[],altars=[];
+let enemies=[],projs=[],parts=[],texts=[],pickups=[],hazards=[],chests=[],pedestals=[],stairsObj=null,bolts=[],mines=[],altars=[],forge=null;
 let swords=[],fireOrbs=[],blizzard=null,banner=null,offer=null,hoverCard=-1,hoverWpn=-1;
 let cam={x:0,y:0},shake=0,freeze=0,gtime=0,flashT=0,flashCol='#fff',flashCd=0;
 function hitFlash(intensity,col){if(flashCd>0)return;flashT=Math.max(flashT,intensity);flashCd=0.3;if(col)flashCol=col;} // 节流，绝不频闪
@@ -341,7 +341,7 @@ addEventListener('mouseup',e=>{
 /* ================= 地牢生成 ================= */
 function genFloor(fl){
   enemies=[];projs=[];parts=[];texts=[];pickups=[];hazards=[];chests=[];pedestals=[];
-  stairsObj=null;lockRoom=null;blizzard=null;bolts=[];mines=[];altars=[];
+  stairsObj=null;lockRoom=null;blizzard=null;bolts=[];mines=[];altars=[];forge=null;
   // 每层随机布局：网格形状/房间尺寸/抖动都不同，串字型蛇形路径保证连通
   map=new Uint8Array(MW*MH);rooms=[];
   const LAYOUTS=[[4,3],[3,3],[5,2],[3,4],[4,2],[2,4],[5,3],[2,3],[3,2]];
@@ -391,6 +391,9 @@ function genFloor(fl){
   const sr=rooms[mid[1]];
   const items=shopRoll();
   for(let i=0;i<3;i++)pedestals.push({x:(sr.x+sr.w/2+(i-1)*2.2)*T,y:(sr.y+sr.h/2)*T,item:items[i],sold:false});
+  // 武器铸造台：商店房角落，花金币给武器打词条
+  const fk=Object.keys(MODS);
+  forge={x:(sr.x+sr.w-3)*T,y:(sr.y+2.5)*T,offer:fk[ri(0,fk.length-1)]};
   // 障碍物掩体（战斗/挑战/Boss房）：四周留3格环带保证连通，Boss房中心留空
   for(const R of rooms){
     if(R.type!=='combat'&&R.type!=='boss'&&R.type!=='challenge')continue;
@@ -452,7 +455,8 @@ function roomAt(x,y,shrink){
 
 /* ================= 运行/玩家 ================= */
 function newRun(wpn){
-  run={weapon:wpn,talents:{},level:1,xp:0,xpNeed:6,pending:0,coins:0,shopDmg:0,floor:1,maxFloor:1,kills:0,wonPending:false,time:0,defUsed:false,hasteMul:1,awakened:false};
+  run={weapon:wpn,talents:{},level:1,xp:0,xpNeed:6,pending:0,coins:0,shopDmg:0,floor:1,maxFloor:1,kills:0,wonPending:false,time:0,defUsed:false,hasteMul:1,awakened:false,
+    mods:{crit:0,lifesteal:0,burn:0,ricochet:0}};
   player={x:0,y:0,r:5,hp:6,maxhp:6,mana:100,maxmana:100,aim:0,cd:0,inv:0,
     roll:0,rollcd:0,rdx:1,rdy:0,blocking:false,blockT:9,blockGap:9,blockHealCd:0,
     shield:0,armor:0,stealth:0,combo:0,hitCnt:0,sub:'bow',charge:-1,
@@ -478,13 +482,16 @@ function giveXp(n){
 function dmgEnemy(e,d,o){
   o=o||{};
   if(e.hp<=0)return;
+  const isMod=o.fromPlayer!==false&&!o.dot; // 词条只作用于直接命中，不作用于持续伤害/连锁子弹
+  let crit=false;
   if(o.fromPlayer!==false){
     if(player.buffAtk>0)d*=2;
     if(e.slowT>0)d+=tc('I2');
   }
+  if(isMod&&run.mods.crit>0&&Math.random()<Math.min(0.6,0.09*run.mods.crit)){d*=2.2;crit=true;} // 暴击
   d=Math.max(1,Math.round(d));
   e.hp-=d;e.flash=0.12;
-  fText(e.x+rnd(-4,4),e.y-10,d,o.col||'#fff',d>=8?1.6:d>=4?1.25:1); // 大伤害数字放大
+  fText(e.x+rnd(-4,4),e.y-10,(crit?d+'!':d),crit?'#ffd040':(o.col||'#fff'),crit?1.7:(d>=8?1.6:d>=4?1.25:1)); // 暴击/大伤害数字放大
   const kb=(e.kbMul===undefined?1:e.kbMul);
   if(o.kx)e.vx+=o.kx*kb; if(o.ky)e.vy+=o.ky*kb;
   // 命中火花（沿击退方向喷溅，更有打击感）
@@ -498,6 +505,18 @@ function dmgEnemy(e,d,o){
   }
   if(o.tags&&o.tags.includes('fire')&&tc('P4')){e.burnT=2;e.burnD=tc('P4');}
   if(o.melee&&run.weapon==='hammer'&&tc('W6')&&!e.barrel){e.echoT=0.4;e.echoD=tc('W6');} // 余震
+  // 武器铸造词条：吸血 / 灼烧 / 弹射
+  if(isMod){
+    const M=run.mods;
+    if(M.lifesteal>0){player.lsAcc=(player.lsAcc||0)+M.lifesteal;if(player.lsAcc>=8){player.lsAcc-=8;heal(1);}}
+    if(M.burn>0&&!e.barrel){e.burnT=2;e.burnD=Math.max(e.burnD||0,M.burn);}
+    if(M.ricochet>0&&!e.barrel&&Math.random()<Math.min(0.55,0.13*M.ricochet)){
+      let nb=null,nd=72;
+      for(const m of enemies)if(!m.dead&&!m.barrel&&m!==e){const dd=dist(e.x,e.y,m.x,m.y);if(dd<nd){nd=dd;nb=m;}}
+      if(nb){bolts.push({x1:e.x,y1:e.y,x2:nb.x,y2:nb.y,life:0.12});
+        dmgEnemy(nb,Math.max(1,Math.round(d*0.6)),{col:'#ffd0a0',fromPlayer:true,dot:true});} // dot:true 防止连锁再触发词条→死循环
+    }
+  }
   burst(e.x,e.y,5,o.col||'#fff');
   if(e.hp<=0)killEnemy(e);
 }
@@ -858,9 +877,9 @@ function enemyUpdate(e,dt){
   if(e.flash>0)e.flash-=dt;
   // 持续伤害先结算：冻结/眩晕的敌人也要吃燃烧与中毒
   if(e.slowT>0)e.slowT-=dt;
-  if(e.burnT>0){e.burnT-=dt;e.burnAcc+=dt;if(e.burnAcc>=1){e.burnAcc-=1;dmgEnemy(e,e.burnD,{fromPlayer:true,col:'#ff8040',kx:0,ky:0});if(e.dead)return;}}
-  if(e.poisonT>0){e.poisonT-=dt;e.poisonAcc+=dt;if(e.poisonAcc>=1){e.poisonAcc-=1;dmgEnemy(e,e.poisonD,{fromPlayer:true,col:'#80e060',kx:0,ky:0});if(e.dead)return;}}
-  if(e.echoT>0){e.echoT-=dt;if(e.echoT<=0){burst(e.x,e.y,6,'#e0c080');dmgEnemy(e,e.echoD,{fromPlayer:true,col:'#e0c080'});if(e.dead)return;}} // 余震
+  if(e.burnT>0){e.burnT-=dt;e.burnAcc+=dt;if(e.burnAcc>=1){e.burnAcc-=1;dmgEnemy(e,e.burnD,{fromPlayer:true,dot:true,col:'#ff8040',kx:0,ky:0});if(e.dead)return;}}
+  if(e.poisonT>0){e.poisonT-=dt;e.poisonAcc+=dt;if(e.poisonAcc>=1){e.poisonAcc-=1;dmgEnemy(e,e.poisonD,{fromPlayer:true,dot:true,col:'#80e060',kx:0,ky:0});if(e.dead)return;}}
+  if(e.echoT>0){e.echoT-=dt;if(e.echoT<=0){burst(e.x,e.y,6,'#e0c080');dmgEnemy(e,e.echoD,{fromPlayer:true,dot:true,col:'#e0c080'});if(e.dead)return;}} // 余震
   if(e.elite&&e.affixes.includes('regen')&&e.hp<e.maxhp&&e.hp>0)e.hp=Math.min(e.maxhp,e.hp+2*dt); // 精英再生
   if(e.barrel)return; // 炸药桶无AI（但DoT可以引爆它）
   // 卡墙自救：被击退/意外嵌进掩体时，朝所在房间中心方向挤出来，避免"打不到的墙中怪"
@@ -1088,6 +1107,13 @@ function applyTalent(t){
 }
 
 /* ================= 交互 ================= */
+const MODS={
+  crit:{name:'暴击',glyph:'暴',col:'#ffd040',desc:'命中有几率造成2.2倍伤害'},
+  lifesteal:{name:'吸血',glyph:'血',col:'#e0405a',desc:'每8次命中回复1点生命'},
+  burn:{name:'灼烧',glyph:'燃',col:'#ff8040',desc:'命中点燃敌人，持续掉血'},
+  ricochet:{name:'弹射',glyph:'链',col:'#ffd0a0',desc:'命中有几率弹射电弧到附近敌人'},
+};
+function forgeCost(){return 20+12*(run.mods.crit+run.mods.lifesteal+run.mods.burn+run.mods.ricochet);}
 const ALTAR_INFO={
   blood:{name:'血之祭坛',hint:'按 E 献祭2点最大生命 → 永久武器伤害+2'},
   greed:{name:'贪婪祭坛',hint:'按 E 付 20 金币 → 获得一次天赋选择'},
@@ -1099,6 +1125,7 @@ function nearestInteract(){
   for(const c of chests)if(!c.open){const d=dist(player.x,player.y,c.x,c.y);if(d<bd){bd=d;best={t:'chest',o:c,hint:'按 E 开启宝箱'};}}
   for(const p of pedestals)if(!p.sold){const d=dist(player.x,player.y,p.x,p.y);if(d<bd){bd=d;best={t:'shop',o:p,hint:'按 E 购买 '+p.item.name+' ('+p.item.price+'金币)'};}}
   for(const a of altars)if(!a.used){const d=dist(player.x,player.y,a.x,a.y);if(d<bd){bd=d;best={t:'altar',o:a,hint:ALTAR_INFO[a.type].hint};}}
+  if(forge){const d=dist(player.x,player.y,forge.x,forge.y);if(d<bd){bd=d;const m=MODS[forge.offer];best={t:'forge',o:forge,hint:'按 E 铸造【'+m.name+'】'+m.desc+' ('+forgeCost()+'金币)'};}}
   if(stairsObj){const d=dist(player.x,player.y,stairsObj.x,stairsObj.y);if(d<bd){bd=d;best={t:'stairs',o:stairsObj,hint:'按 E 下往第 '+(run.floor+1)+' 层'};}}
   return best;
 }
@@ -1112,6 +1139,13 @@ function doInteract(it){
     else if(roll===3){player.buffAtk=30;banner={txt:'宝箱：狂暴 30 秒！',sub:'伤害翻倍',t:2};}
     else{player.shield=Math.min(3,player.shield+2);banner={txt:'宝箱：+2 层护盾！',sub:'',t:2};}
     burst(it.o.x,it.o.y,20,'#ffe066');
+  }else if(it.t==='forge'){
+    const cost=forgeCost();
+    if(run.coins<cost){fText(player.x,player.y-14,'金币不足','#ff7070');return;}
+    run.coins-=cost;const k=forge.offer;run.mods[k]++;
+    const m=MODS[k];banner={txt:'铸造：'+m.name+' Lv'+run.mods[k],sub:m.desc,t:2.2};SFX.buy();
+    burst(forge.x,forge.y,16,m.col);
+    const fk=Object.keys(MODS);forge.offer=fk[ri(0,fk.length-1)]; // 换新词条
   }else if(it.t==='altar'){
     const a=it.o;
     if(a.type==='blood'){
@@ -1223,7 +1257,7 @@ function update(dt){
     blizzard.t-=dt;blizzard.tick-=dt;
     if(blizzard.tick<=0){blizzard.tick=0.5;
       for(const e of enemies)if(!e.dead&&dist(e.x,e.y,P.x,P.y)<62)
-        dmgEnemy(e,1,{tags:['ice'],col:'#9fe0ff'});}
+        dmgEnemy(e,1,{tags:['ice'],dot:true,col:'#9fe0ff'});}
     if(blizzard.t<=0)blizzard=null;
   }
   // 地雷
@@ -1316,7 +1350,7 @@ function update(dt){
       for(const e of enemies){if(e.dead||e.barrel||e.boss)continue;
         if(dist(e.x,e.y,hz.x,hz.y)<hz.r){const a=Math.atan2(hz.y-e.y,hz.x-e.x);moveEnt(e,Math.cos(a)*70*dt,Math.sin(a)*70*dt);}}
       if(hz.tick<=0){hz.tick=0.3;
-        for(const e of enemies){if(e.dead||e.barrel)continue;if(dist(e.x,e.y,hz.x,hz.y)<hz.r)dmgEnemy(e,1+tc('U2'),{col:'#c8a0ff'});}}
+        for(const e of enemies){if(e.dead||e.barrel)continue;if(dist(e.x,e.y,hz.x,hz.y)<hz.r)dmgEnemy(e,1+tc('U2'),{dot:true,col:'#c8a0ff'});}}
       if(hz.life<=0)hz.done=true;
       continue;
     }
@@ -1507,6 +1541,17 @@ function drawWorld(){
       ctx.font='7px monospace';ctx.textAlign='center';ctx.fillStyle=col;
       ctx.fillText('✦',a.x,a.y-11+Math.sin(gtime*2.5)*1.5);
     }
+  }
+  // 武器铸造台（铁砧）
+  if(forge){
+    const fx=forge.x,fy=forge.y,m=MODS[forge.offer];
+    ctx.fillStyle='#2a2632';ctx.fillRect(fx-4,fy+2,8,4); // 砧座
+    ctx.fillStyle='#4a4652';ctx.fillRect(fx-6,fy-3,12,5); // 砧身
+    ctx.fillStyle='#5a5662';ctx.fillRect(fx-7,fy-4,4,2);
+    // 迸溅火星
+    if(Math.sin(gtime*6+fx)>0.6&&Math.random()<0.3)parts.push({x:fx+rnd(-3,3),y:fy-4,vx:rnd(-20,20),vy:rnd(-40,-10),life:0.3,size:1.5,col:'#ffb040',streak:true});
+    ctx.font='8px monospace';ctx.textAlign='center';ctx.fillStyle=m.col;
+    ctx.fillText(m.glyph,fx,fy-8+Math.sin(gtime*2.5)*1.2);
   }
   // 锁门红光
   if(lockRoom){
