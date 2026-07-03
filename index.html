@@ -302,8 +302,8 @@ let run=null,player=null;
 let map=null,rooms=[],lockRoom=null;
 let enemies=[],projs=[],parts=[],texts=[],pickups=[],hazards=[],chests=[],pedestals=[],stairsObj=null,bolts=[],mines=[],altars=[];
 let swords=[],fireOrbs=[],blizzard=null,banner=null,offer=null,hoverCard=-1,hoverWpn=-1;
-let cam={x:0,y:0},shake=0,freeze=0,gtime=0,flashT=0,flashCol='#fff';
-function hitFlash(intensity,col){flashT=Math.max(flashT,intensity);if(col)flashCol=col;}
+let cam={x:0,y:0},shake=0,freeze=0,gtime=0,flashT=0,flashCol='#fff',flashCd=0;
+function hitFlash(intensity,col){if(flashCd>0)return;flashT=Math.max(flashT,intensity);flashCd=0.3;if(col)flashCol=col;} // 节流，绝不频闪
 const FLOOR_PAL=[
   {fl:'#2b2436',flD:'#241d2e',wa:'#141020',waE:'#2a2340',waF:'#1c1628'},
   {fl:'#22303a',flD:'#1c2831',wa:'#0f1a20',waE:'#24363f',waF:'#16232a'},
@@ -344,8 +344,11 @@ function genFloor(fl){
   stairsObj=null;lockRoom=null;blizzard=null;bolts=[];mines=[];altars=[];
   // 每层随机布局：网格形状/房间尺寸/抖动都不同，串字型蛇形路径保证连通
   map=new Uint8Array(MW*MH);rooms=[];
-  const LAYOUTS=[[4,3],[3,3],[5,2],[3,4],[4,2],[2,4],[5,3]];
-  const L=LAYOUTS[ri(0,LAYOUTS.length-1)];
+  const LAYOUTS=[[4,3],[3,3],[5,2],[3,4],[4,2],[2,4],[5,3],[2,3],[3,2]];
+  let li=ri(0,LAYOUTS.length-1);
+  if(li===run.lastLayoutIdx)li=(li+1+ri(0,LAYOUTS.length-2))%LAYOUTS.length; // 不与上一层相同
+  run.lastLayoutIdx=li;
+  const L=LAYOUTS[li];
   const COLS=L[0],ROWS=L[1];
   const CW=Math.floor((MW-2)/COLS),CH=Math.floor((MH-2)/ROWS);
   run.layout=COLS+'×'+ROWS;
@@ -487,11 +490,8 @@ function dmgEnemy(e,d,o){
   // 命中火花（沿击退方向喷溅，更有打击感）
   if(o.kx||o.ky){const a=Math.atan2(o.ky||0,o.kx||0);spark(e.x,e.y,a,o.col||'#fff',d>=5?12:7);}
   else spark(e.x,e.y,rnd(0,TAU),o.col||'#fff',6);
-  // 命中反馈：白闪 + 定帧，伤害越高越强
-  if(o.fromPlayer!==false){
-    if(d>=6){hitFlash(0.5,'#fff');freeze=Math.max(freeze,0.06);}
-    else hitFlash(0.18,o.col||'#fff');
-  }
+  // 命中反馈：只在高伤害时轻微定帧（不再逐击全屏闪，避免连点频闪）
+  if(o.fromPlayer!==false&&d>=8)freeze=Math.max(freeze,0.05);
   if(o.tags&&o.tags.includes('ice')){
     e.slowT=2+0.6*tc('I6');e.slowMul=clamp(0.5-0.09*tc('I6'),0.2,0.5);e.iceHits=(e.iceHits||0)+1;
     if(tc('I4')&&e.iceHits>=3&&!e.boss){e.frozen=2;e.iceHits=0;fText(e.x,e.y-16,'冻结!','#8ae0ff');}
@@ -1375,7 +1375,7 @@ function update(dt){
   cam.x=lerp(cam.x,clamp(P.x-VW/2,0,MW*T-VW),Math.min(1,dt*8));
   cam.y=lerp(cam.y,clamp(P.y-VH/2,0,MH*T-VH),Math.min(1,dt*8));
   shake=Math.max(0,shake-dt*22);
-  flashT=Math.max(0,flashT-dt*6);
+  flashT=Math.max(0,flashT-dt*6);flashCd=Math.max(0,flashCd-dt);
 }
 function updateSwords(dt){
   const want=tc('F1')?1+tc('F2'):0;
@@ -1447,7 +1447,7 @@ function draw(){
   // 命中屏幕闪光（增强打击感）
   if(flashT>0){
     ctx.save();ctx.globalCompositeOperation='lighter';
-    ctx.globalAlpha=Math.min(0.5,flashT*0.5);ctx.fillStyle=flashCol;
+    ctx.globalAlpha=Math.min(0.28,flashT*0.35);ctx.fillStyle=flashCol;
     ctx.fillRect(0,0,VW,VH);ctx.restore();
   }
   drawUI();
@@ -1756,10 +1756,15 @@ function drawHeldWeapon(P){
     ctx.fillStyle='#eef7ff';ctx.fillRect(14,-1,4,2);
     ctx.fillStyle='#8a6a3a';ctx.fillRect(1,-3,2,6);
   }else if(w==='mage'){
-    ctx.strokeStyle='#8a6a4a';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(11,0);ctx.stroke();
     const oc=tc('I1')?'#9fe0ff':(tc('P1')?'#ff9040':(tc('U1')?'#c090ff':'#c47ff5'));
-    ctx.fillStyle=oc;ctx.beginPath();ctx.arc(12,0,2.6,0,TAU);ctx.fill();
-    ctx.fillStyle='#fff';ctx.globalAlpha*=0.6;ctx.beginPath();ctx.arc(11,-1,1,0,TAU);ctx.fill();
+    // 木杆 + 缠绕纹 + 杖头爪 + 悬浮水晶
+    ctx.strokeStyle='#7a5636';ctx.lineWidth=2.4;ctx.beginPath();ctx.moveTo(-3,0);ctx.lineTo(10,0);ctx.stroke();
+    ctx.strokeStyle='#9c744a';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(-1,-1);ctx.lineTo(2,1);ctx.moveTo(3,-1);ctx.lineTo(6,1);ctx.stroke();
+    ctx.strokeStyle='#8a6038';ctx.lineWidth=1.4;ctx.beginPath();ctx.arc(11.5,0,3,-2.1,2.1);ctx.stroke(); // 爪
+    ctx.save();ctx.globalCompositeOperation='lighter';ctx.globalAlpha=0.5+0.2*Math.sin(gtime*5);
+    ctx.fillStyle=oc;ctx.beginPath();ctx.arc(13,0,4,0,TAU);ctx.fill();ctx.restore(); // 光晕
+    ctx.fillStyle=oc;ctx.beginPath();ctx.moveTo(13,-2.6);ctx.lineTo(15,0);ctx.lineTo(13,2.6);ctx.lineTo(11,0);ctx.closePath();ctx.fill(); // 菱形水晶
+    ctx.fillStyle='#ffffff';ctx.globalAlpha=0.7;ctx.fillRect(12,-1,1.5,1.5);ctx.globalAlpha=1;
   }else if(w==='ranger'){
     if(P.sub==='bow'){
       const pull=P.charge>=0?P.charge*3:0;
