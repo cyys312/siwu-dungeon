@@ -288,6 +288,11 @@ const TALENTS=[
   {id:'G3',w:'all',s:'通用',name:'聚宝',max:4,desc:'拾取范围扩大，敌人掉落更多金币'},
   {id:'G6',w:'all',s:'通用',name:'血色收割',max:3,desc:'敌人掉落生命的几率提高'},
   {id:'G5',w:'all',s:'通用',name:'金身不灭',max:1,key:1,desc:'每层一次：受到致命伤害时不会死亡，而是保留1点生命'},
+  // ===== 觉醒（该武器投入≥8点后解锁的终极天赋，每周目每武器限一次）=====
+  {id:'AW_H',w:'hammer',s:'觉醒',name:'战神觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
+  {id:'AW_S',w:'sword',s:'觉醒',name:'剑圣觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
+  {id:'AW_M',w:'mage',s:'觉醒',name:'法圣觉醒',max:1,awaken:1,desc:'流派大成：法术伤害+3、最大生命+1回满、施法+25%、法力上限+50'},
+  {id:'AW_R',w:'ranger',s:'觉醒',name:'影弓觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
 ];
 const GOLD_CARD={id:'GOLD',w:'all',s:'通用',name:'金币袋',max:99,desc:'立即获得 15 金币'};
 
@@ -295,7 +300,7 @@ const GOLD_CARD={id:'GOLD',w:'all',s:'通用',name:'金币袋',max:99,desc:'立�
 let state='title';           // title | play | cards | over | win
 let run=null,player=null;
 let map=null,rooms=[],lockRoom=null;
-let enemies=[],projs=[],parts=[],texts=[],pickups=[],hazards=[],chests=[],pedestals=[],stairsObj=null,bolts=[],mines=[];
+let enemies=[],projs=[],parts=[],texts=[],pickups=[],hazards=[],chests=[],pedestals=[],stairsObj=null,bolts=[],mines=[],altars=[];
 let swords=[],fireOrbs=[],blizzard=null,banner=null,offer=null,hoverCard=-1,hoverWpn=-1;
 let cam={x:0,y:0},shake=0,freeze=0,gtime=0,flashT=0,flashCol='#fff';
 function hitFlash(intensity,col){flashT=Math.max(flashT,intensity);if(col)flashCol=col;}
@@ -336,7 +341,7 @@ addEventListener('mouseup',e=>{
 /* ================= 地牢生成 ================= */
 function genFloor(fl){
   enemies=[];projs=[];parts=[];texts=[];pickups=[];hazards=[];chests=[];pedestals=[];
-  stairsObj=null;lockRoom=null;blizzard=null;bolts=[];mines=[];
+  stairsObj=null;lockRoom=null;blizzard=null;bolts=[];mines=[];altars=[];
   // 每层随机布局：网格形状/房间尺寸/抖动都不同，串字型蛇形路径保证连通
   map=new Uint8Array(MW*MH);rooms=[];
   const LAYOUTS=[[4,3],[3,3],[5,2],[3,4],[4,2],[2,4],[5,3]];
@@ -374,6 +379,9 @@ function genFloor(fl){
   rooms[mid[1]].type='shop';rooms[mid[1]].cleared=true;
   // 挑战房：第2层起有概率把一个中段房设为全精英挑战房，清房大奖
   if(fl>=2&&mid.length>2&&Math.random()<0.6)rooms[mid[2]].type='challenge';
+  // 地牢祭坛：每层在出生房放一座，随机献祭
+  const ALT=['blood','greed','gamble','vigor'];
+  altars.push({x:(start.x+start.w/2+3)*T,y:(start.y+start.h/2)*T,type:ALT[ri(0,ALT.length-1)],used:false});
   // 摆放宝箱与商店
   const cr=rooms[mid[0]];
   chests.push({x:(cr.x+cr.w/2)*T,y:(cr.y+cr.h/2)*T,open:false});
@@ -441,7 +449,7 @@ function roomAt(x,y,shrink){
 
 /* ================= 运行/玩家 ================= */
 function newRun(wpn){
-  run={weapon:wpn,talents:{},level:1,xp:0,xpNeed:6,pending:0,coins:0,shopDmg:0,floor:1,maxFloor:1,kills:0,wonPending:false,time:0,defUsed:false};
+  run={weapon:wpn,talents:{},level:1,xp:0,xpNeed:6,pending:0,coins:0,shopDmg:0,floor:1,maxFloor:1,kills:0,wonPending:false,time:0,defUsed:false,hasteMul:1,awakened:false};
   player={x:0,y:0,r:5,hp:6,maxhp:6,mana:100,maxmana:100,aim:0,cd:0,inv:0,
     roll:0,rollcd:0,rdx:1,rdy:0,blocking:false,blockT:9,blockGap:9,blockHealCd:0,
     shield:0,armor:0,stealth:0,combo:0,hitCnt:0,sub:'bow',charge:-1,
@@ -1043,11 +1051,13 @@ function roomPos(x,y){
 function genOffer(){
   const primaryTaken=TALENTS.some(t=>t.tag==='primary'&&tc(t.id)>0);
   const pool=[];
+  const wInvest=TALENTS.filter(x=>x.w===run.weapon&&!x.awaken).reduce((s,x)=>s+tc(x.id),0);
   for(const t of TALENTS){
     if(t.w!=='all'&&t.w!==run.weapon)continue;
     if(tc(t.id)>=t.max)continue;
     if(t.tag==='primary'&&primaryTaken)continue;
     if(t.req&&tc(t.req)===0)continue;
+    if(t.awaken&&wInvest<8)continue; // 觉醒需该武器投入≥8点
     pool.push(t);
   }
   const picks=[];
@@ -1067,15 +1077,28 @@ function applyTalent(t){
     run.talents[t.id]=(run.talents[t.id]||0)+1;
     if(t.id==='G1'){player.maxhp++;heal(1);}
     if(t.id==='U3'){player.maxmana+=25;player.mana=Math.min(player.maxmana,player.mana+25);}
+    if(t.awaken){ // 觉醒：大幅综合强化
+      run.shopDmg+=3;player.maxhp++;run.hasteMul*=1.25;run.awakened=true;
+      if(t.id==='AW_M'){player.maxmana+=50;}
+      heal(player.maxhp);shake=Math.max(shake,8);hitFlash(0.6,'#ffe066');
+      banner={txt:'✦ '+t.name+' ✦',sub:'流派大成',t:2.6};
+    }
   }
   burst(player.x,player.y,12,'#ffe066');
 }
 
 /* ================= 交互 ================= */
+const ALTAR_INFO={
+  blood:{name:'血之祭坛',hint:'按 E 献祭2点最大生命 → 永久武器伤害+2'},
+  greed:{name:'贪婪祭坛',hint:'按 E 付 20 金币 → 获得一次天赋选择'},
+  gamble:{name:'命运祭坛',hint:'按 E 付 15 金币 → 豪赌：大奖或惩罚'},
+  vigor:{name:'活力祭坛',hint:'按 E 付 25 金币 → 最大生命+1 并回满'},
+};
 function nearestInteract(){
   let best=null,bd=18;
   for(const c of chests)if(!c.open){const d=dist(player.x,player.y,c.x,c.y);if(d<bd){bd=d;best={t:'chest',o:c,hint:'按 E 开启宝箱'};}}
   for(const p of pedestals)if(!p.sold){const d=dist(player.x,player.y,p.x,p.y);if(d<bd){bd=d;best={t:'shop',o:p,hint:'按 E 购买 '+p.item.name+' ('+p.item.price+'金币)'};}}
+  for(const a of altars)if(!a.used){const d=dist(player.x,player.y,a.x,a.y);if(d<bd){bd=d;best={t:'altar',o:a,hint:ALTAR_INFO[a.type].hint};}}
   if(stairsObj){const d=dist(player.x,player.y,stairsObj.x,stairsObj.y);if(d<bd){bd=d;best={t:'stairs',o:stairsObj,hint:'按 E 下往第 '+(run.floor+1)+' 层'};}}
   return best;
 }
@@ -1089,6 +1112,25 @@ function doInteract(it){
     else if(roll===3){player.buffAtk=30;banner={txt:'宝箱：狂暴 30 秒！',sub:'伤害翻倍',t:2};}
     else{player.shield=Math.min(3,player.shield+2);banner={txt:'宝箱：+2 层护盾！',sub:'',t:2};}
     burst(it.o.x,it.o.y,20,'#ffe066');
+  }else if(it.t==='altar'){
+    const a=it.o;
+    if(a.type==='blood'){
+      if(player.maxhp<=2){fText(player.x,player.y-14,'生命不足','#ff7070');return;}
+      player.maxhp-=2;player.hp=Math.min(player.hp,player.maxhp);run.shopDmg+=2;
+      banner={txt:'血之献祭',sub:'-2最大生命 → 武器伤害+2',t:2.2};
+    }else if(a.type==='greed'){
+      if(run.coins<20){fText(player.x,player.y-14,'金币不足','#ff7070');return;}
+      run.coins-=20;run.pending++;banner={txt:'贪婪祭坛',sub:'获得一次天赋选择',t:2};
+    }else if(a.type==='gamble'){
+      if(run.coins<15){fText(player.x,player.y-14,'金币不足','#ff7070');return;}
+      run.coins-=15;
+      if(Math.random()<0.5){run.coins+=45;banner={txt:'命运眷顾！',sub:'+45 金币',t:2.2};SFX.win();}
+      else{if(Math.random()<0.5)run.pending++;else{player.hp=Math.max(1,player.hp-2);}banner={txt:'命运祭坛',sub:run.pending>0?'…还算走运':'献祭了鲜血',t:2.2};}
+    }else if(a.type==='vigor'){
+      if(run.coins<25){fText(player.x,player.y-14,'金币不足','#ff7070');return;}
+      run.coins-=25;player.maxhp++;heal(player.maxhp);banner={txt:'活力祭坛',sub:'最大生命+1 并回满',t:2};
+    }
+    a.used=true;SFX.buy();burst(a.x,a.y,16,'#c090ff');
   }else if(it.t==='shop'){
     const p=it.o;
     if(run.coins<p.item.price){fText(player.x,player.y-14,'金币不足','#ff7070');return;}
@@ -1124,7 +1166,7 @@ function update(dt){
   run.time+=dt;
   const P=player;
   // 冷却
-  P.cd=Math.max(0,P.cd-dt);P.inv=Math.max(0,P.inv-dt);
+  P.cd=Math.max(0,P.cd-dt*(run.hasteMul||1));P.inv=Math.max(0,P.inv-dt); // hasteMul：觉醒加速全武器出手
   P.rollcd=Math.max(0,P.rollcd-dt);P.blockHealCd=Math.max(0,P.blockHealCd-dt);
   P.stealth=Math.max(0,P.stealth-dt);P.buffAtk=Math.max(0,P.buffAtk-dt);
   if(run.weapon==='mage')P.mana=Math.min(P.maxmana,P.mana+(20+8*tc('U3'))*dt);
@@ -1449,6 +1491,21 @@ function drawWorld(){
       ctx.font='8px monospace';ctx.textAlign='center';
       ctx.fillStyle='#ffe066';ctx.fillText(p.item.glyph,p.x,p.y-8+Math.sin(gtime*2.5)*1.5);
       ctx.fillStyle='#c8b880';ctx.fillText(p.item.price+'金',p.x,p.y+13);
+    }
+  }
+  // 祭坛
+  const ALTC={blood:'#e0405a',greed:'#e0c040',gamble:'#c060e0',vigor:'#40e0a0'};
+  for(const a of altars){
+    const col=a.used?'#4a4458':ALTC[a.type];
+    ctx.fillStyle='#2a2438';ctx.fillRect(a.x-6,a.y-1,12,7); // 底座
+    ctx.fillStyle='#3a3450';ctx.fillRect(a.x-7,a.y+5,14,3);
+    ctx.fillStyle=col;ctx.fillRect(a.x-3,a.y-8,6,8); // 石碑
+    if(!a.used){
+      ctx.save();ctx.globalCompositeOperation='lighter';
+      ctx.globalAlpha=0.3+0.2*Math.sin(gtime*3);ctx.fillStyle=col;
+      ctx.beginPath();ctx.arc(a.x,a.y-5,9,0,TAU);ctx.fill();ctx.restore();
+      ctx.font='7px monospace';ctx.textAlign='center';ctx.fillStyle=col;
+      ctx.fillText('✦',a.x,a.y-11+Math.sin(gtime*2.5)*1.5);
     }
   }
   // 锁门红光
@@ -1839,13 +1896,14 @@ function drawCards(){
     const x=VW/2-total/2+i*(cw+gap),y=94;
     const hov=mouse.x>x&&mouse.x<x+cw&&mouse.y>y&&mouse.y<y+chh;
     if(hov)hoverCard=i;
-    const schoolCol=t.key?'#ffd040':(t.s==='通用'?'#a8a0b8':WPNS[run.weapon]?WPNS[run.weapon].col:'#fff');
-    ctx.fillStyle=hov?'#241c33':'#171126';
-    ctx.strokeStyle=hov?schoolCol:'#3a3050';
-    ctx.lineWidth=hov?2:1;
+    const schoolCol=t.awaken?'#ff8adf':(t.key?'#ffd040':(t.s==='通用'?'#a8a0b8':WPNS[run.weapon]?WPNS[run.weapon].col:'#fff'));
+    ctx.fillStyle=hov?'#241c33':(t.awaken?'#2a1830':'#171126');
+    ctx.strokeStyle=t.awaken?'#ff8adf':(hov?schoolCol:'#3a3050');
+    ctx.lineWidth=t.awaken?2:(hov?2:1);
     ctx.fillRect(x,y,cw,chh);ctx.strokeRect(x+0.5,y+0.5,cw-1,chh-1);
     let ty=y+14;
-    if(t.key){ctx.font='7px monospace';ctx.fillStyle='#ffd040';ctx.fillText('★ 键石',x+cw/2,ty);ty+=2;}
+    if(t.awaken){ctx.font='7px monospace';ctx.fillStyle='#ff8adf';ctx.fillText('✦ 觉醒 ✦',x+cw/2,ty);ty+=2;}
+    else if(t.key){ctx.font='7px monospace';ctx.fillStyle='#ffd040';ctx.fillText('★ 键石',x+cw/2,ty);ty+=2;}
     ctx.font='bold 11px monospace';ctx.fillStyle='#f0e8ff';
     ctx.fillText(t.name,x+cw/2,ty+14);
     if(t.max>1&&t.id!=='GOLD'){
