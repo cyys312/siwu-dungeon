@@ -224,8 +224,8 @@ const TALENTS=[
   // ===== 大锤·雷霆流 =====
   {id:'L1',w:'hammer',s:'雷霆流',name:'感电',max:1,desc:'大锤命中时引出一道闪电，链接并电击附近的1名敌人'},
   {id:'L2',w:'hammer',s:'雷霆流',name:'导电',max:3,req:'L1',desc:'闪电伤害+1，并多链接1名敌人'},
-  {id:'L3',w:'hammer',s:'雷霆流',name:'静电护体',max:2,desc:'每2秒自动向最近的敌人释放一道电击'},
-  {id:'L4',w:'hammer',s:'雷霆流',name:'雷霆万钧',max:1,key:1,desc:'每6秒天降落雷，轰击最近的敌人'},
+  {id:'L3',w:'hammer',s:'雷霆流',name:'静电积蓄',max:2,desc:'每第3次锤击（升级后更频繁）释放一圈范围电击'},
+  {id:'L4',w:'hammer',s:'雷霆流',name:'雷霆万钧',max:1,key:1,desc:'翻滚后你的下一次锤击引落雷，重击目标'},
   // ===== 长剑·吸血流 =====
   {id:'B1',w:'sword',s:'吸血流',name:'血刃',max:1,desc:'剑刃吸血：每命中5次回复1点生命'},
   {id:'B2',w:'sword',s:'吸血流',name:'剑舞',max:10,desc:'攻击速度 +15%'},
@@ -250,19 +250,19 @@ const TALENTS=[
   {id:'P3',w:'mage',s:'火法',name:'爆轰',max:4,desc:'所有爆炸范围 +30%'},
   {id:'P4',w:'mage',s:'火法',name:'燃焰',max:4,desc:'火焰伤害点燃敌人，2秒内持续灼烧'},
   {id:'P6',w:'mage',s:'火法',name:'爆燃连锁',max:1,req:'P4',desc:'燃烧中的敌人死亡时引发一次爆炸'},
-  {id:'P5',w:'mage',s:'火法',name:'陨星术',max:1,key:1,desc:'每8秒在最近敌人处坠落陨石，大范围高额伤害'},
+  {id:'P5',w:'mage',s:'火法',name:'陨星术',max:1,key:1,desc:'翻滚后你的下一发火球召唤陨石砸向目标，大范围高伤'},
   // ===== 法师·冰法 =====
   {id:'I1',w:'mage',s:'冰法',name:'冰川蔓延',max:1,tag:'primary',desc:'主攻击变为冰川：冰锥沿地面向前蔓延，穿透并减速敌人'},
   {id:'I2',w:'mage',s:'冰法',name:'霜寒刺骨',max:8,desc:'你对被减速敌人的伤害 +1'},
   {id:'I3',w:'mage',s:'冰法',name:'冰封领域',max:4,req:'I1',desc:'冰川蔓延变宽：两侧各+1列'},
   {id:'I4',w:'mage',s:'冰法',name:'冻牢',max:1,desc:'被冰属性击中3次的敌人冻结2秒'},
   {id:'I6',w:'mage',s:'冰法',name:'极寒',max:3,desc:'减速效果更强、持续更久'},
-  {id:'I5',w:'mage',s:'冰法',name:'暴风雪',max:1,key:1,desc:'每7秒以自身为中心刮起暴风雪，持续伤害并减速周围敌人'},
+  {id:'I5',w:'mage',s:'冰法',name:'暴风雪',max:1,key:1,desc:'翻滚时以自身为中心刮起暴风雪，持续伤害并减速周围敌人'},
   // ===== 法师·奥术流 =====
   {id:'U1',w:'mage',s:'奥术流',name:'奥术涌动',max:1,tag:'primary',desc:'主攻变为奥术飞弹：穿透敌人，命中后分裂成2颗追加弹'},
   {id:'U2',w:'mage',s:'奥术流',name:'秘能灌注',max:8,desc:'奥术伤害 +1'},
   {id:'U3',w:'mage',s:'奥术流',name:'法力奔涌',max:2,desc:'法力上限+25、回复加快、奥术耗蓝减少'},
-  {id:'U4',w:'mage',s:'奥术流',name:'奥术奇点',max:1,key:1,desc:'每7秒在最近敌人处形成奇点，吸引并持续灼伤周围敌人'},
+  {id:'U4',w:'mage',s:'奥术流',name:'奥术奇点',max:1,key:1,desc:'翻滚时在落点形成奇点，吸引并持续灼伤周围敌人'},
   // ===== 游侠·弓流 =====
   {id:'A1',w:'ranger',s:'弓流',name:'贯穿箭',max:1,desc:'满蓄力的箭矢穿透所有敌人'},
   {id:'A2',w:'ranger',s:'弓流',name:'多重射击',max:4,desc:'射击时额外发射1支侧向箭'},
@@ -281,7 +281,7 @@ const TALENTS=[
   {id:'R1',w:'ranger',s:'陷阱流',name:'诡雷',max:1,desc:'翻滚时在原地埋下地雷，敌人靠近即引爆'},
   {id:'R2',w:'ranger',s:'陷阱流',name:'高爆',max:3,req:'R1',desc:'地雷伤害与爆炸范围提升'},
   {id:'R3',w:'ranger',s:'陷阱流',name:'连环雷',max:2,req:'R1',desc:'每次翻滚多埋1颗地雷'},
-  {id:'R4',w:'ranger',s:'陷阱流',name:'天罗地网',max:1,req:'R1',key:1,desc:'每5秒自动在附近布设地雷'},
+  {id:'R4',w:'ranger',s:'陷阱流',name:'天罗地网',max:1,req:'R1',key:1,desc:'击杀敌人时在其倒下处留下一颗地雷'},
   // ===== 通用 =====
   {id:'G1',w:'all',s:'通用',name:'生命之泉',max:10,desc:'最大生命 +1，并回复1点生命'},
   {id:'G2',w:'all',s:'通用',name:'疾行',max:4,desc:'移动速度 +10%'},
@@ -337,18 +337,25 @@ addEventListener('mouseup',e=>{
 function genFloor(fl){
   enemies=[];projs=[];parts=[];texts=[];pickups=[];hazards=[];chests=[];pedestals=[];
   stairsObj=null;lockRoom=null;blizzard=null;bolts=[];mines=[];
-  // 串字型布局：房间沿蛇形路径一间连一间（出生→……→Boss），路径清晰不绕路
+  // 每层随机布局：网格形状/房间尺寸/抖动都不同，串字型蛇形路径保证连通
   map=new Uint8Array(MW*MH);rooms=[];
-  const COLS=4,ROWS=3,CW=30,CH=22,RW=26,RH=18; // 统一大房间 26×18
+  const LAYOUTS=[[4,3],[3,3],[5,2],[3,4],[4,2],[2,4],[5,3]];
+  const L=LAYOUTS[ri(0,LAYOUTS.length-1)];
+  const COLS=L[0],ROWS=L[1];
+  const CW=Math.floor((MW-2)/COLS),CH=Math.floor((MH-2)/ROWS);
+  run.layout=COLS+'×'+ROWS;
   const path=[];
   for(let r=0;r<ROWS;r++){
     if(r%2===0)for(let c=0;c<COLS;c++)path.push([c,r]);
     else for(let c=COLS-1;c>=0;c--)path.push([c,r]);
   }
-  const N=Math.min(10,path.length);
+  const N=Math.min(ri(8,10),path.length);
   for(let i=0;i<N;i++){
     const[cx,cy]=path[i];
-    rooms.push({x:1+cx*CW+2,y:1+cy*CH+2,w:RW,h:RH,type:'combat',cleared:false,locked:false,discovered:false});
+    const rw=clamp(CW-ri(3,6),10,26),rh=clamp(CH-ri(3,6),9,20); // 每间尺寸不同
+    const ox=clamp(1+cx*CW+Math.floor((CW-rw)/2)+ri(-1,1),1,MW-rw-1);
+    const oy=clamp(1+cy*CH+Math.floor((CH-rh)/2)+ri(-1,1),1,MH-rh-1);
+    rooms.push({x:ox,y:oy,w:rw,h:rh,type:'combat',cleared:false,locked:false,discovered:false});
   }
   for(const r of rooms)for(let y=r.y;y<r.y+r.h;y++)for(let x=r.x;x<r.x+r.w;x++)map[y*MW+x]=1;
   for(let i=1;i<rooms.length;i++){ // 相邻房间之间的短走廊（蛇形路径上基本是直线）
@@ -437,7 +444,7 @@ function newRun(wpn){
     roll:0,rollcd:0,rdx:1,rdy:0,blocking:false,blockT:9,blockGap:9,blockHealCd:0,
     shield:0,armor:0,stealth:0,combo:0,hitCnt:0,sub:'bow',charge:-1,
     buffAtk:0,mvx:0,mvy:0,face:1,walk:0,target:null,
-    meteorCd:8,blizzCd:7,volleyCd:5};
+    meteorArmed:0,thunderArmed:0,staticHits:0};
   swords=[];fireOrbs=[];offer=null;
   genFloor(1);
   state='play';
@@ -510,6 +517,8 @@ function killEnemy(e){
   if(Math.random()<(e.boss?1:0.10+0.08*tc('G6')))pickups.push({t:'heart',x:e.x,y:e.y,vx:rnd(-40,40),vy:rnd(-40,40),v:1});
   // 影舞：背刺击杀重置
   if(e.lastHitStealth&&tc('D5')){player.rollcd=0;player.stealth=1;fText(player.x,player.y-14,'影舞!','#b090ff');}
+  // R4 天罗地网：击杀敌人在其位置留下一颗地雷
+  if(tc('R4')&&!e.boss)dropMine(e.x,e.y);
   if(e.boss)bossDie(e);
 }
 function bossDie(e){
@@ -581,6 +590,15 @@ function tryAttack(){
       parts.push({x:player.x+Math.cos(aim)*rng*0.6,y:player.y+Math.sin(aim)*rng*0.6,vx:0,vy:0,life:0.22,size:rng*0.9,col:'rgba(255,220,150,.5)',ring:true});
       if(tc('W1')&&player.shield<2)player.shield=Math.min(2,player.shield+hits); // 只涨不扣：不吞宝箱给的额外护盾
       if(tc('L1'))zapChain(hx,hy,1+tc('L2'),2+tc('L2')+run.shopDmg,0); // 感电闪电链
+      // L3 静电护体：每第3次锤击释放范围电击
+      if(tc('L3')){player.staticHits=(player.staticHits||0)+1;
+        if(player.staticHits>=Math.max(2,4-tc('L3'))){player.staticHits=0;
+          for(let z=0;z<3;z++)zapChain(player.x,player.y,1,2+run.shopDmg,0);
+          parts.push({x:player.x,y:player.y,vx:0,vy:0,life:0.2,size:40,col:'rgba(168,224,255,.5)',ring:true});}}
+      // L4 雷霆万钧：翻滚蓄能后的这一击引落雷
+      if(tc('L4')&&player.thunderArmed){player.thunderArmed=0;
+        bolts.push({x1:hx,y1:hy-60,x2:hx,y2:hy,life:0.22,big:1});SFX.boom();
+        hazards.push({x:hx,y:hy,r:34,delay:0.12,life:0.3,dmg:8+run.shopDmg,tags:['shock'],col:'#a8e0ff',kind:'thunder'});}
     }
     if(tc('W5'))projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*150,vy:Math.sin(aim)*150,r:7,dmg:2+run.shopDmg,type:'shock',from:'p',life:0.65,pierce:true,hitSet:new Set()});
   }else if(w==='sword'){
@@ -627,6 +645,10 @@ function tryAttack(){
     }else if(primary==='fire'){
       player.cd=0.5;SFX.fire();
       projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*170,vy:Math.sin(aim)*170,r:4,dmg:(2+run.shopDmg)*stealthMul,type:'fire',from:'p',life:1.8});
+      // P5 陨星术：翻滚蓄能后的这发火球召唤陨石砸向目标
+      if(tc('P5')&&player.meteorArmed){player.meteorArmed=0;
+        const mt=player.target,mtx=mt?mt.x:player.x+Math.cos(aim)*70,mty=mt?mt.y:player.y+Math.sin(aim)*70;
+        hazards.push({x:mtx,y:mty,r:36*(1+0.3*tc('P3')),delay:0.55,life:0.3,dmg:7+run.shopDmg,tags:['fire'],col:'#ff8040',kind:'meteor'});}
     }else{
       player.cd=0.55;SFX.ice();
       const wdt=tc('I3');
@@ -1092,12 +1114,16 @@ function update(dt){
   let my=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);
   const ml=Math.hypot(mx,my);
   if(ml>0){mx/=ml;my/=ml;P.rdx=mx;P.rdy=my;P.walk+=dt*8;if(!P.target)P.aim=Math.atan2(my,mx);}
-  // 翻滚
+  // 翻滚（键石现由翻滚触发/蓄能，而非每几秒自动）
   if(pressed.Space&&P.rollcd<=0&&P.roll<=0){
     P.roll=0.18;P.rollcd=0.7;SFX.stealth();
     if(ml===0){P.rdx=Math.cos(P.aim);P.rdy=Math.sin(P.aim);}
     burst(P.x,P.y,6,'#b0c0d0');
     if(tc('R1')){const nm=tc('R3');for(let i=0;i<=nm;i++)dropMine(P.x+rnd(-6,6),P.y+rnd(-6,6));} // 诡雷
+    if(tc('P5')){P.meteorArmed=1;fText(P.x,P.y-16,'陨星待发','#ff9040');} // 翻滚后下发火球召唤陨石
+    if(tc('L4')){P.thunderArmed=1;fText(P.x,P.y-16,'引雷待发','#a8e0ff');} // 翻滚后下次锤击引落雷
+    if(tc('I5')){blizzard={t:3,tick:0};SFX.ice();} // 翻滚爆发暴风雪
+    if(tc('U4')){hazards.push({x:P.x,y:P.y,r:52,delay:0,life:1.8,dmg:1,tags:[],col:'#b088ff',kind:'singularity',tick:0});} // 翻滚生成奇点
   }
   if(P.roll>0){
     P.roll-=dt;
@@ -1113,13 +1139,7 @@ function update(dt){
     if(!mouse.down&&P.charge>=0)releaseBow();
   }else if(mouse.down)tryAttack();
   if(swing){swing.t+=dt;if(swing.t>=swing.dur)swing=null;}
-  // 键石计时器
-  if(tc('P5')){P.meteorCd-=dt;
-    if(P.meteorCd<=0){P.meteorCd=8;
-      const mt=P.target,mtx=mt?mt.x:P.x+Math.cos(P.aim)*50,mty=mt?mt.y:P.y+Math.sin(P.aim)*50;
-      hazards.push({x:mtx,y:mty,r:34*(1+0.3*tc('P3')),delay:0.7,life:0.3,dmg:4+run.shopDmg,tags:['fire'],col:'#ff8040',kind:'meteor'});}}
-  if(tc('I5')){P.blizzCd-=dt;
-    if(P.blizzCd<=0){P.blizzCd=7;blizzard={t:3,tick:0};SFX.ice();}}
+  // 键石现在是主动/连招触发（见翻滚、命中处），这里只维护暴风雪持续效果
   if(blizzard){
     blizzard.t-=dt;blizzard.tick-=dt;
     if(blizzard.tick<=0){blizzard.tick=0.5;
@@ -1127,20 +1147,6 @@ function update(dt){
         dmgEnemy(e,1,{tags:['ice'],col:'#9fe0ff'});}
     if(blizzard.t<=0)blizzard=null;
   }
-  // 静电护体 L3：定期电击最近敌人
-  if(tc('L3')){P.staticCd=(P.staticCd||0)-dt;
-    if(P.staticCd<=0){P.staticCd=2/tc('L3');zapChain(P.x,P.y,1,2+run.shopDmg,0);}}
-  // 雷霆万钧 L4：落雷
-  if(tc('L4')){P.thunderCd=(P.thunderCd||6)-dt;
-    if(P.thunderCd<=0){P.thunderCd=6;const t=P.target;if(t){
-      bolts.push({x1:t.x,y1:t.y-60,x2:t.x,y2:t.y,life:0.2,big:1});
-      hazards.push({x:t.x,y:t.y,r:30,delay:0.15,life:0.3,dmg:6+run.shopDmg,tags:['shock'],col:'#a8e0ff',kind:'thunder'});}}}
-  // 奥术奇点 U4
-  if(tc('U4')){P.singCd=(P.singCd||7)-dt;
-    if(P.singCd<=0){P.singCd=7;const t=P.target;if(t)hazards.push({x:t.x,y:t.y,r:52,delay:0,life:1.6,dmg:1,tags:[],col:'#b088ff',kind:'singularity',tick:0});}}
-  // 天罗地网 R4：自动布雷
-  if(tc('R4')){P.netCd=(P.netCd||5)-dt;
-    if(P.netCd<=0){P.netCd=5;dropMine(P.x+rnd(-30,30),P.y+rnd(-30,30));}}
   // 地雷
   for(const m of mines){
     if(m.dead)continue;
@@ -1622,6 +1628,44 @@ function drawEnemy(e){
     ctx.fillStyle='#e34a5a';ctx.fillRect(e.x-6,e.y-e.r-7,12*e.hp/e.maxhp,2);
   }
 }
+/* 手持武器渲染：静止时握在手上随光标指向，攻击时武器扫过挥击弧 */
+function drawHeldWeapon(P){
+  const w=run.weapon;
+  const swinging=swing&&(w==='hammer'||w==='sword'||(w==='ranger'&&P.sub==='dagger'));
+  let wa;
+  if(swinging){const k=swing.t/swing.dur;wa=swing.dir-swing.wide/2+swing.wide*k;}
+  else wa=P.aim+Math.sin(gtime*3)*0.06; // 待机微摆
+  const reach=swinging?9:6;
+  const hx=P.x+Math.cos(wa)*reach,hy=P.y+Math.sin(wa)*reach;
+  ctx.save();ctx.translate(hx,hy);ctx.rotate(wa);
+  if(P.stealth>0)ctx.globalAlpha=0.4;
+  if(w==='hammer'){
+    ctx.strokeStyle='#8a5a2a';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(12,0);ctx.stroke();
+    ctx.fillStyle='#c9c4b0';ctx.fillRect(10,-5,7,10);
+    ctx.fillStyle='#9a9484';ctx.fillRect(10,-5,2,10);ctx.fillStyle='#e8e4d4';ctx.fillRect(15,-4,2,8);
+  }else if(w==='sword'){
+    ctx.fillStyle='#cfe4f5';ctx.fillRect(3,-1,15,2);
+    ctx.fillStyle='#eef7ff';ctx.fillRect(14,-1,4,2);
+    ctx.fillStyle='#8a6a3a';ctx.fillRect(1,-3,2,6);
+  }else if(w==='mage'){
+    ctx.strokeStyle='#8a6a4a';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(11,0);ctx.stroke();
+    const oc=tc('I1')?'#9fe0ff':(tc('P1')?'#ff9040':(tc('U1')?'#c090ff':'#c47ff5'));
+    ctx.fillStyle=oc;ctx.beginPath();ctx.arc(12,0,2.6,0,TAU);ctx.fill();
+    ctx.fillStyle='#fff';ctx.globalAlpha*=0.6;ctx.beginPath();ctx.arc(11,-1,1,0,TAU);ctx.fill();
+  }else if(w==='ranger'){
+    if(P.sub==='bow'){
+      const pull=P.charge>=0?P.charge*3:0;
+      ctx.strokeStyle='#8ade7a';ctx.lineWidth=1.6;ctx.beginPath();ctx.arc(5,0,5,-1.25,1.25);ctx.stroke();
+      ctx.strokeStyle='#d8f0c8';ctx.lineWidth=1;ctx.beginPath();
+      ctx.moveTo(5+Math.cos(1.25)*5,Math.sin(1.25)*5);ctx.lineTo(5-pull,0);ctx.lineTo(5+Math.cos(-1.25)*5,Math.sin(-1.25)*5);ctx.stroke();
+    }else{
+      ctx.fillStyle='#c8f0c0';ctx.fillRect(3,-1,9,2);
+      ctx.fillStyle='#eefce8';ctx.fillRect(9,-1,3,2);
+      ctx.fillStyle='#6a8a5a';ctx.fillRect(1,-2,2,4);
+    }
+  }
+  ctx.restore();
+}
 function drawPlayer(){
   const P=player;
   if(P.inv>0&&Math.sin(gtime*40)>0)return;
@@ -1633,21 +1677,13 @@ function drawPlayer(){
   ctx.scale(P.face,1);
   ctx.drawImage(sprPlayer,-6,-14+4-bob);
   ctx.restore();
-  // 手持武器指示
+  // 手持武器 + 挥舞动画
   const a=P.aim;
-  if(run.weapon==='ranger'&&P.sub==='bow'){
-    ctx.strokeStyle='#8ade7a';ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.arc(P.x+Math.cos(a)*8,P.y+Math.sin(a)*8,4,a-1.1,a+1.1);ctx.stroke();
-    if(P.charge>=0){
-      ctx.fillStyle='#201826';ctx.fillRect(P.x-8,P.y+8,16,2);
-      ctx.fillStyle=P.charge>=1?'#ffe066':'#8ade7a';
-      ctx.fillRect(P.x-8,P.y+8,16*P.charge,2);
-    }
-  }else if(run.weapon==='mage'){
-    ctx.strokeStyle='#8a6a4a';ctx.lineWidth=1.5;
-    ctx.beginPath();ctx.moveTo(P.x,P.y);ctx.lineTo(P.x+Math.cos(a)*9,P.y+Math.sin(a)*9);ctx.stroke();
-    const oc=tc('I1')?'#9fe0ff':'#ff9040';
-    ctx.fillStyle=oc;ctx.beginPath();ctx.arc(P.x+Math.cos(a)*10,P.y+Math.sin(a)*10,1.8,0,TAU);ctx.fill();
+  drawHeldWeapon(P);
+  if(run.weapon==='ranger'&&P.sub==='bow'&&P.charge>=0){ // 蓄力条
+    ctx.fillStyle='#201826';ctx.fillRect(P.x-8,P.y+8,16,2);
+    ctx.fillStyle=P.charge>=1?'#ffe066':'#8ade7a';
+    ctx.fillRect(P.x-8,P.y+8,16*P.charge,2);
   }
   if(P.blocking){
     ctx.strokeStyle=tc('J5')&&P.blockT<0.25?'#ffe066':'#aab4c2';
@@ -1688,8 +1724,8 @@ function drawUI(){
   // 键石冷却
   let kx=100;
   ctx.font='8px monospace';
-  if(tc('P5')){ctx.fillStyle=P.meteorCd<0.5?'#ffe066':'#806040';ctx.fillText('陨'+Math.ceil(P.meteorCd),kx,VH-8);kx+=26;}
-  if(tc('I5')){ctx.fillStyle=P.blizzCd<0.5?'#9fe0ff':'#406080';ctx.fillText('雪'+Math.ceil(P.blizzCd),kx,VH-8);kx+=26;}
+  if(P.meteorArmed){ctx.fillStyle='#ff9040';ctx.fillText('陨星待发',kx,VH-8);kx+=42;}
+  if(P.thunderArmed){ctx.fillStyle='#a8e0ff';ctx.fillText('引雷待发',kx,VH-8);kx+=42;}
   if(P.buffAtk>0){ctx.fillStyle='#ff7060';ctx.fillText('狂暴'+Math.ceil(P.buffAtk),kx,VH-8);kx+=34;}
   if(P.stealth>0){ctx.fillStyle='#b090ff';ctx.fillText('隐身',kx,VH-8);}
   // 金币/层数
