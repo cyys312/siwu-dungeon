@@ -301,7 +301,7 @@ let state='title';           // title | play | cards | over | win
 let run=null,player=null;
 let map=null,rooms=[],lockRoom=null;
 let enemies=[],projs=[],parts=[],texts=[],pickups=[],hazards=[],chests=[],pedestals=[],stairsObj=null,bolts=[],mines=[],altars=[],forge=null;
-let swords=[],fireOrbs=[],blizzard=null,banner=null,offer=null,hoverCard=-1,hoverWpn=-1;
+let swords=[],fireOrbs=[],blizzard=null,banner=null,offer=null,hoverCard=-1,hoverWpn=-1,hoverMeta=-1;
 let cam={x:0,y:0},shake=0,freeze=0,gtime=0,flashT=0,flashCol='#fff',flashCd=0;
 function hitFlash(intensity,col){if(flashCd>0)return;flashT=Math.max(flashT,intensity);flashCd=0.3;if(col)flashCol=col;} // 节流，绝不频闪
 const FLOOR_PAL=[
@@ -310,6 +310,20 @@ const FLOOR_PAL=[
   {fl:'#33222a',flD:'#2b1c23',wa:'#180f14',waE:'#33222c',waF:'#221419'},
 ];
 function tc(id){return run&&run.talents[id]||0;}
+
+/* ================= 元进度：魂之天赋树（localStorage 跨局） ================= */
+let META={souls:0,up:{hp:0,gold:0,dmg:0,speed:0,luck:0}};
+const METAUP=[
+  {k:'hp',name:'体魄',desc:'起始最大生命+1',max:6,cost:l=>8+l*6},
+  {k:'gold',name:'财富',desc:'起始金币+15',max:5,cost:l=>6+l*5},
+  {k:'dmg',name:'锋芒',desc:'起始武器伤害+1',max:4,cost:l=>16+l*16},
+  {k:'speed',name:'疾风',desc:'起始移速+5%',max:4,cost:l=>10+l*9},
+  {k:'luck',name:'福缘',desc:'拾取范围与掉落+',max:3,cost:l=>12+l*11},
+];
+function loadMeta(){try{const s=localStorage.getItem('siwu_meta');if(s){const m=JSON.parse(s);if(m&&m.up){META.souls=m.souls||0;for(const u of METAUP)META.up[u.k]=m.up[u.k]||0;}}}catch(e){}}
+function saveMeta(){try{localStorage.setItem('siwu_meta',JSON.stringify(META));}catch(e){}}
+function buyMeta(k){const u=METAUP.find(x=>x.k===k);if(!u)return;const lv=META.up[k];if(lv>=u.max)return;const c=u.cost(lv);if(META.souls<c)return;META.souls-=c;META.up[k]++;saveMeta();SFX.buy&&SFX.buy();}
+loadMeta();
 
 /* ================= 输入 ================= */
 const keys={},pressed={};
@@ -462,16 +476,24 @@ function newRun(wpn){
     shield:0,armor:0,stealth:0,combo:0,hitCnt:0,sub:'bow',charge:-1,
     buffAtk:0,mvx:0,mvy:0,face:1,walk:0,target:null,
     meteorArmed:0,thunderArmed:0,staticHits:0};
+  // 元进度加成
+  player.maxhp+=META.up.hp;player.hp=player.maxhp;
+  run.coins=META.up.gold*15;run.shopDmg=META.up.dmg;
   swords=[];fireOrbs=[];offer=null;
   genFloor(1);
   state='play';
 }
+function awardSouls(){
+  if(run.soulsAwarded)return;run.soulsAwarded=true;
+  run.soulsGain=run.maxFloor*2+Math.floor(run.kills/8);
+  META.souls+=run.soulsGain;saveMeta();
+}
 function moveSpeed(){
-  let s=84*(1+0.12*tc('D3'))*(1+0.10*tc('G2'));
+  let s=84*(1+0.12*tc('D3'))*(1+0.10*tc('G2'))*(1+0.05*META.up.speed);
   if(player.blocking)s*=tc('J4')>=1?0.7:0.4;
   return s;
 }
-function pickR(){return 34+22*tc('G3');}
+function pickR(){return 34+22*tc('G3')+10*META.up.luck;}
 function heal(n){const b=player.hp;player.hp=clamp(player.hp+n,0,player.maxhp);if(player.hp>b){fText(player.x,player.y-12,'+'+(player.hp-b),'#6ee87a');SFX.heart();}}
 function giveXp(n){
   run.xp+=n;
@@ -604,7 +626,7 @@ function damagePlayer(d,sx,sy,src){
     parts.push({x:player.x,y:player.y,vx:0,vy:0,life:0.4,size:40,col:'rgba(255,224,102,.5)',ring:true});
     return;
   }
-  if(player.hp<=0){state='over';SFX.die();}
+  if(player.hp<=0){state='over';SFX.die();awardSouls();}
 }
 
 /* ================= 攻击 ================= */
@@ -1486,7 +1508,7 @@ function draw(){
   }
   drawUI();
   if(state==='cards')drawCards();
-  if(state==='over')drawEnd('深入第 '+run.floor+' 层','#ff5060','最深纪录 '+run.maxFloor+' 层 · 按 R 或点击 重新挑战');
+  if(state==='over')drawEnd('深入第 '+run.floor+' 层','#ff5060','获得 '+(run.soulsGain||0)+' 魂 ✦ 最深纪录 '+run.maxFloor+' 层 · 按 R 回主菜单强化');
   if(state==='win')drawEnd('通 关 ！','#ffe066','按 R 或点击 再来一局');
   present();
 }
@@ -2028,12 +2050,29 @@ function drawTitle(){
       if(line){ctx.fillText(line,x+cw/2,ly);ly+=10;}
     }
   });
-  ctx.font='9px monospace';ctx.fillStyle='#7a7090';
-  ctx.fillText('WASD移动 · 左键攻击(自动瞄准最近敌人) · 右键流派技 · 空格翻滚 · E交互',VW/2,VH-40);
-  ctx.fillStyle='#5a5478';
-  ctx.fillText('击杀获得经验升级抽天赋 · 商店强化武器 · 宝箱藏惊喜 · 层末Boss必掉双升级',VW/2,VH-26);
+  // 魂之天赋树（元进度）
+  ctx.font='bold 10px monospace';ctx.fillStyle='#c8a8ff';
+  ctx.fillText('✦ 魂之天赋树   魂: '+META.souls,VW/2,244);
+  const nw=64,ngap=6,ntot=METAUP.length*nw+(METAUP.length-1)*ngap;
+  hoverMeta=-1;
+  METAUP.forEach((u,i)=>{
+    const x=VW/2-ntot/2+i*(nw+ngap),y=250,nh=30,lv=META.up[u.k],maxed=lv>=u.max,c=maxed?0:u.cost(lv);
+    const afford=!maxed&&META.souls>=c;
+    const hov=mouse.x>x&&mouse.x<x+nw&&mouse.y>y&&mouse.y<y+nh;
+    if(hov&&!maxed)hoverMeta=i;
+    ctx.fillStyle=hov?'#241c33':'#141021';
+    ctx.strokeStyle=maxed?'#4a6a4a':(afford?(hov?'#c8a8ff':'#5a4a78'):'#3a3048');
+    ctx.lineWidth=1;ctx.fillRect(x,y,nw,nh);ctx.strokeRect(x+0.5,y+0.5,nw-1,nh-1);
+    ctx.font='9px monospace';ctx.fillStyle=maxed?'#8ac88a':'#e0d8f0';
+    ctx.fillText(u.name+' '+lv+'/'+u.max,x+nw/2,y+12);
+    ctx.font='7px monospace';
+    if(maxed){ctx.fillStyle='#6a9a6a';ctx.fillText('已满',x+nw/2,y+23);}
+    else{ctx.fillStyle=afford?'#c8a8ff':'#6a5a80';ctx.fillText('✦'+c,x+nw/2,y+23);}
+  });
+  ctx.font='8px monospace';ctx.fillStyle='#6a6088';
+  ctx.fillText('死亡按最深层数获得魂 · 点击节点永久强化 · WASD移动/左键攻击(自动瞄准)/右键流派技/空格翻滚/E交互',VW/2,VH-20);
   ctx.fillStyle=(gtime%1<0.6)?'#ffe066':'#806840';
-  ctx.fillText('—— 点击武器卡开始冒险 ——',VW/2,VH-10);
+  ctx.fillText('—— 点击武器卡开始冒险 ——',VW/2,VH-8);
 }
 function drawEnd(title,col,sub){
   ctx.fillStyle='rgba(5,3,12,.82)';ctx.fillRect(0,0,VW,VH);
@@ -2063,7 +2102,8 @@ function frame(now){
   last=now;
   // 状态输入
   if(state==='title'){
-    if(pressed.LMB&&hoverWpn>=0){
+    if(pressed.LMB&&hoverMeta>=0){buyMeta(METAUP[hoverMeta].k);mouse.down=false;} // 先响应魂节点，避免误开局
+    else if(pressed.LMB&&hoverWpn>=0){
       newRun(Object.keys(WPNS)[hoverWpn]);
       mouse.down=false;
     }
