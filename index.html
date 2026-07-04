@@ -372,6 +372,21 @@ const TALENTS=[
   {id:'G8',w:'all',s:'通用',name:'博学',max:3,desc:'获得经验 +25%'},
   {id:'G9',w:'all',s:'通用',name:'荆棘之甲',max:3,desc:'受到接触伤害时，向攻击者反弹伤害'},
   {id:'G5',w:'all',s:'通用',name:'金身不灭',max:1,key:1,desc:'每层一次：受到致命伤害时不会死亡，而是保留1点生命'},
+  // ===== 扩充天赋（v1.1批次1）=====
+  {id:'G10',w:'all',s:'通用',name:'铁躯',max:3,desc:'最大生命 +1，并回满该格'},
+  {id:'G11',w:'all',s:'通用',name:'疾影',max:3,desc:'移动速度 +8%'},
+  {id:'G12',w:'all',s:'通用',name:'坚韧',max:2,desc:'受伤后的无敌时间延长'},
+  {id:'G13',w:'all',s:'通用',name:'命大',max:2,desc:'每层战斗开始时额外获得 1 层护甲'},
+  {id:'W8',w:'hammer',s:'战士流',name:'巨力',max:4,desc:'大锤伤害 +1'},
+  {id:'W9',w:'hammer',s:'战士流',name:'横扫',max:3,desc:'攻击范围 +12%'},
+  {id:'L5',w:'hammer',s:'雷霆流',name:'雷能',max:4,desc:'闪电链伤害 +1'},
+  {id:'B8',w:'sword',s:'吸血流',name:'嗜血刃',max:4,desc:'长剑伤害 +1'},
+  {id:'B9',w:'sword',s:'吸血流',name:'疾风步',max:3,desc:'攻击速度 +8%'},
+  {id:'P8',w:'mage',s:'火法',name:'烈焰精通',max:4,desc:'火焰/爆炸伤害 +1'},
+  {id:'I8',w:'mage',s:'冰法',name:'凛冬',max:4,desc:'冰川伤害 +1'},
+  {id:'U5',w:'mage',s:'奥术流',name:'奥能',max:4,desc:'奥术伤害 +1'},
+  {id:'A8',w:'ranger',s:'弓流',name:'穿甲箭',max:4,desc:'箭矢伤害 +1'},
+  {id:'D8',w:'ranger',s:'匕首流',name:'致命',max:3,desc:'匕首伤害 +1'},
   // ===== 觉醒（该武器投入≥8点后解锁的终极天赋，每周目每武器限一次）=====
   {id:'AW_H',w:'hammer',s:'觉醒',name:'战神觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
   {id:'AW_S',w:'sword',s:'觉醒',name:'剑圣觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
@@ -573,7 +588,7 @@ function awardSouls(){
   META.souls+=run.soulsGain;saveMeta();
 }
 function moveSpeed(){
-  let s=84*(1+0.12*tc('D3'))*(1+0.10*tc('G2'))*(1+0.05*META.up.speed);
+  let s=84*(1+0.12*tc('D3'))*(1+0.10*tc('G2'))*(1+0.08*tc('G11'))*(1+0.05*META.up.speed);
   if(player.blocking)s*=tc('J4')>=1?0.7:0.4;
   return s;
 }
@@ -715,7 +730,7 @@ function damagePlayer(d,sx,sy,src){
   if(tryBlock(sx,sy,d,src))return;
   if(player.armor>0){player.armor--;fText(player.x,player.y-12,'护甲!','#aab4c2');SFX.block();return;}
   if(player.shield>0){player.shield--;fText(player.x,player.y-12,'护盾!','#4ab8e8');SFX.block();return;}
-  player.hp-=d;player.inv=0.9;shake=Math.max(shake,4);SFX.hurt();
+  player.hp-=d;player.inv=0.9*(1+0.25*tc('G12'));shake=Math.max(shake,4);SFX.hurt();
   burst(player.x,player.y,10,'#e34a5a');
   if(player.stealth>0)player.stealth=0;
   if(player.hp<=0&&tc('G5')&&!run.defUsed){ // 金身不灭：每层一次免死
@@ -735,18 +750,18 @@ function tryAttack(){
   const stealthMul=(player.stealth>0&&tc('D2'))?3:1;
   const wasStealth=player.stealth>0;
   if(w==='hammer'){
-    const rng=26*(1+0.2*tc('W3'));
+    const rng=26*(1+0.2*tc('W3')+0.12*tc('W9'));
     player.cd=0.85/(1+0.15*tc('W4'));
     swing={t:0,dur:0.2,dir:aim,rng,col:'#e0c080',wide:PI*1.5};
     SFX.swing();
     let hits=0,hx=0,hy=0;
-    meleeHit(aim,rng,PI*1.5,3+tc('W2')+tc('W7')+run.shopDmg,240,e=>{hits++;hx=e.x;hy=e.y;});
+    meleeHit(aim,rng,PI*1.5,3+tc('W2')+tc('W7')+tc('W8')+run.shopDmg,240,e=>{hits++;hx=e.x;hy=e.y;});
     if(hits>0){
       freeze=Math.max(freeze,0.09);shake=Math.max(shake,7);SFX.hit();hitFlash(0.4,'#ffe0a0');
       // 命中冲击波环
       parts.push({x:player.x+Math.cos(aim)*rng*0.6,y:player.y+Math.sin(aim)*rng*0.6,vx:0,vy:0,life:0.22,size:rng*0.9,col:'rgba(255,220,150,.5)',ring:true});
       if(tc('W1')&&player.shield<2)player.shield=Math.min(2,player.shield+hits); // 只涨不扣：不吞宝箱给的额外护盾
-      if(tc('L1'))zapChain(hx,hy,1+tc('L2'),2+tc('L2')+run.shopDmg,0); // 感电闪电链
+      if(tc('L1'))zapChain(hx,hy,1+tc('L2'),2+tc('L2')+tc('L5')+run.shopDmg,0); // 感电闪电链
       // L3 静电护体：每第3次锤击释放范围电击
       if(tc('L3')){player.staticHits=(player.staticHits||0)+1;
         if(player.staticHits>=Math.max(2,4-tc('L3'))){player.staticHits=0;
@@ -756,11 +771,11 @@ function tryAttack(){
     if(tc('W5'))projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*150,vy:Math.sin(aim)*150,r:7,dmg:2+run.shopDmg,type:'shock',from:'p',life:0.65,pierce:true,hitSet:new Set()});
   }else if(w==='sword'){
     const low=player.hp*3<=player.maxhp;
-    player.cd=0.22/((1+0.15*tc('B2'))*(1+0.10*tc('B7'))*(1+0.1*tc('E2'))*(low&&tc('B4')?1.4:1));
+    player.cd=0.22/((1+0.15*tc('B2'))*(1+0.10*tc('B7'))*(1+0.08*tc('B9'))*(1+0.1*tc('E2'))*(low&&tc('B4')?1.4:1));
     if(gtime-(player.comboLast||0)>1.2)player.combo=0; // 停手1.2秒重置连击
     player.comboLast=gtime;
     player.combo=(player.combo||0)+1;
-    let dmg=1+run.shopDmg+tc('B6')+tc('E3'); // 破空:突进攻击额外伤害
+    let dmg=1+run.shopDmg+tc('B6')+tc('B8')+tc('E3'); // 破空:突进攻击额外伤害
     const third=tc('B3')&&player.combo%3===0;
     if(third)dmg*=2;
     swing={t:0,dur:0.13,dir:aim,rng:22,col:third?'#ffe066':'#cfe4f5',wide:PI*0.9};
@@ -792,12 +807,12 @@ function tryAttack(){
     player.mana-=cost;
     if(primary==='arcane'){
       player.cd=0.32;SFX.shoot();
-      const adm=(1+run.shopDmg+tc('U2'))*stealthMul;
+      const adm=(1+run.shopDmg+tc('U2')+tc('U5'))*stealthMul;
       const enh=tc('U1')>0; // 奥术涌动：穿透+分裂
       projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*(enh?230:200),vy:Math.sin(aim)*(enh?230:200),r:enh?4:3,dmg:adm,type:'arcane',from:'p',life:1.6,pierce:enh,split:enh?2:0,hitSet:enh?new Set():undefined});
     }else if(primary==='fire'){
       player.cd=0.5;SFX.fire();
-      projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*170,vy:Math.sin(aim)*170,r:4,dmg:(2+run.shopDmg+tc('P7'))*stealthMul,type:'fire',from:'p',life:1.8});
+      projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*170,vy:Math.sin(aim)*170,r:4,dmg:(2+run.shopDmg+tc('P7')+tc('P8'))*stealthMul,type:'fire',from:'p',life:1.8});
     }else{
       player.cd=0.55;SFX.ice();
       const wdt=tc('I3');
@@ -806,7 +821,7 @@ function tryAttack(){
           const perp=aim+PI/2;
           hazards.push({x:player.x+Math.cos(aim)*seg*15+Math.cos(perp)*row*13,
             y:player.y+Math.sin(aim)*seg*15+Math.sin(perp)*row*13,
-            r:10,delay:seg*0.055,life:0.5,dmg:(1+run.shopDmg+tc('I7'))*stealthMul,tags:['ice'],col:'#9fe0ff',kind:'ice'});
+            r:10,delay:seg*0.055,life:0.5,dmg:(1+run.shopDmg+tc('I7')+tc('I8'))*stealthMul,tags:['ice'],col:'#9fe0ff',kind:'ice'});
         }
       }
     }
@@ -816,7 +831,7 @@ function tryAttack(){
       swing={t:0,dur:0.1,dir:aim,rng:16,col:'#c8f0c0',wide:PI*0.55};
       SFX.swing();
       let hits=0;
-      meleeHit(aim,16,PI*0.6,(1+run.shopDmg)*stealthMul,60,e=>{
+      meleeHit(aim,16,PI*0.6,(1+run.shopDmg+tc('D8'))*stealthMul,60,e=>{
         hits++;
         if(tc('D4')){e.poisonT=2;e.poisonD=tc('D4')+tc('D7');}
       },{melee:true,stealthHit:wasStealth});
@@ -849,7 +864,7 @@ function releaseBow(){
   player.cd=c<0.35?0.3:0.2; // 速点惩罚：没蓄力的轻射冷却更长
   const aim=player.aim;
   const stealthMul=(player.stealth>0&&tc('D2'))?3:1;
-  const base=(1+Math.round(6*c))+tc('A4')+tc('A7')+run.shopDmg; // 蓄力连续放大：1(速点)→7(蓄满)
+  const base=(1+Math.round(6*c))+tc('A4')+tc('A7')+tc('A8')+run.shopDmg; // 蓄力连续放大：1(速点)→7(蓄满)
   const pierce=c>=1&&tc('A1')>0;
   const spd=220+200*c;
   const shots=[0];
@@ -1323,6 +1338,12 @@ function genOffer(){
     for(let i=0;i<pool.length;i++){r-=wt(pool[i]);if(r<=0){idx=i;break;}}
     picks.push(pool[idx]);pool.splice(idx,1);
   }
+  // 键石保底(方案B)：连续3次没出键石/觉醒，且池中有，则保证一张
+  const isSp=t=>t&&(t.key||t.awaken);
+  if(picks.some(isSp))run.noSpecial=0;
+  else{run.noSpecial=(run.noSpecial||0)+1;
+    if(run.noSpecial>=3){const sp=pool.filter(isSp);
+      if(sp.length){picks[picks.length-1]=sp[ri(0,sp.length-1)];run.noSpecial=0;}}}
   while(picks.length<3)picks.push(GOLD_CARD);
   return picks;
 }
@@ -1331,7 +1352,7 @@ function applyTalent(t){
   if(t.id==='GOLD'){run.coins+=15;fText(player.x,player.y-14,'+15金币','#ffe066');}
   else{
     run.talents[t.id]=(run.talents[t.id]||0)+1;
-    if(t.id==='G1'){player.maxhp++;heal(1);}
+    if(t.id==='G1'||t.id==='G10'){player.maxhp++;heal(1);}
     if(t.id==='U3'){player.maxmana+=25;player.mana=Math.min(player.maxmana,player.mana+25);}
     if(t.awaken){ // 觉醒：大幅综合强化
       run.shopDmg+=3;player.maxhp++;run.hasteMul*=1.25;run.awakened=true;
@@ -1553,7 +1574,7 @@ function update(dt){
     }
   }
   // 战斗开始时护甲
-  if(lockRoom&&!lockRoom.armorGiven){lockRoom.armorGiven=true;player.armor=tc('J3');}
+  if(lockRoom&&!lockRoom.armorGiven){lockRoom.armorGiven=true;player.armor=tc('J3')+tc('G13');}
   // 敌人
   for(const e of enemies)if(!e.dead)enemyUpdate(e,dt);
   enemies=enemies.filter(e=>!e.dead);
@@ -1658,7 +1679,7 @@ function update(dt){
   if(it&&pressed.KeyE)doInteract(it);
   // 升级触发
   if(run.pending>0){
-    state='cards';offer=genOffer();hoverCard=-1;
+    state='cards';offer=genOffer();hoverCard=-1;run.rerollFree=true;
     P.charge=-1;mouse.down=false;
   }
   // 相机
@@ -2222,7 +2243,7 @@ function drawCards(){
   ctx.font='9px monospace';ctx.fillStyle='#8a8098';
   ctx.fillText('剩余选择次数：'+run.pending+'   (点击卡片 或 按 1/2/3)',VW/2,66);
   ctx.fillStyle=run.coins>=8?'#ffe066':'#6a6078';
-  ctx.fillText('按 R 重摇（8 金币，当前 '+run.coins+'）',VW/2,78);
+  ctx.fillText(run.rerollFree?'按 R 重摇（本次免费！）':'按 R 重摇（5 金币，当前 '+run.coins+'）',VW/2,78);
   const cw=98,chh=116,gap=12;
   const total=offer.length*cw+(offer.length-1)*gap;
   hoverCard=-1;
@@ -2260,7 +2281,7 @@ function pickCard(i){
   if(!offer||i<0||i>=offer.length)return;
   applyTalent(offer[i]);
   run.pending--;
-  if(run.pending>0){offer=genOffer();}
+  if(run.pending>0){offer=genOffer();run.rerollFree=true;}
   else{
     offer=null;
     if(run.wonPending){state='win';SFX.win();}
@@ -2374,7 +2395,10 @@ function frame(now){
     if(pressed.Digit1)pickCard(0);
     if(pressed.Digit2)pickCard(1);
     if(pressed.Digit3)pickCard(2);
-    if(pressed.KeyR&&run.coins>=8){run.coins-=8;offer=genOffer();hoverCard=-1;SFX.card();} // R 花8金重摇
+    if(pressed.KeyR){ // R 重摇：每次升级首摇免费，之后每摇5金
+      if(run.rerollFree){run.rerollFree=false;offer=genOffer();hoverCard=-1;SFX.card();}
+      else if(run.coins>=5){run.coins-=5;offer=genOffer();hoverCard=-1;SFX.card();}
+    }
   }else if(state==='over'||state==='win'){
     if(pressed.KeyR||pressed.LMB){state='title';mouse.down=false;}
   }else{
