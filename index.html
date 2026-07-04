@@ -215,6 +215,12 @@ const sprBoss1=sprite(M_SLIME,{1:'#3a1030',2:'#a445a8',3:'#e08de0',8:'#26071f'})
 const sprBoss2=sprite(M_SKEL,{1:'#181020',2:'#e8e0c0',3:'#a89858',8:'#ff4040'});
 const sprBoss3=sprite(M_GHOST,{1:'#301040',2:'#8858c8',3:'#d8b8ff',8:'#ff3868'});
 const sprBoss4=sprite(M_SLIME,{1:'#14100c',2:'#6a6258',3:'#9a9084',8:'#ff6828'}); // 深渊石魔：岩石灰+炽红眼
+const sprBoss5=sprite(M_BAT,{1:'#1a0a1a',2:'#5a2a6a',3:'#9a5aac',8:'#ff4060'});   // 蛛后
+const sprBoss6=sprite(M_SKEL,{1:'#2a0808',2:'#e04030',3:'#a02018',8:'#ffe040'});  // 狂战之魂
+const sprBoss7=sprite(M_SLIME,{1:'#2a0e04',2:'#e05018',3:'#ffa030',8:'#ffe860'}); // 熔岩魔
+const sprBoss8=sprite(M_IMP,{1:'#0a1a2a',2:'#4088c0',3:'#a0d8f0',8:'#e8f8ff'});   // 冰霜巨人
+const sprBoss9=sprite(M_GHOST,{1:'#050508',2:'#2a2a3c',3:'#6a6a86',8:'#ff4040'}); // 暗影刺客
+const sprBoss10=sprite(M_GHOST,{1:'#160026',2:'#6a2a9a',3:'#b060e0',8:'#ff40a0'});// 虚空之眼
 const sprHeart=sprite(M_HEART,{1:'#57121e',2:'#e34a5a'});
 const sprHeartE=sprite(M_HEART,{1:'#241d2c',2:'#3a3144'});
 const sprHeartA=sprite(M_HEART,{1:'#2c2c34',2:'#8a94a2'});
@@ -971,6 +977,12 @@ function spawnBoss(R){
     {name:'骸骨将军',hp:90,spr:sprBoss2,ai:'general',r:11},
     {name:'深渊巫妖',hp:130,spr:sprBoss3,ai:'lich',r:11},
     {name:'深渊石魔',hp:170,spr:sprBoss4,ai:'golem',r:14},
+    {name:'蛛后',hp:150,spr:sprBoss5,ai:'spider',r:12},
+    {name:'狂战之魂',hp:165,spr:sprBoss6,ai:'berserk',r:11},
+    {name:'熔岩魔',hp:185,spr:sprBoss7,ai:'magma',r:13},
+    {name:'冰霜巨人',hp:205,spr:sprBoss8,ai:'frost',r:14},
+    {name:'暗影刺客',hp:150,spr:sprBoss9,ai:'shadow',r:10},
+    {name:'虚空之眼',hp:215,spr:sprBoss10,ai:'void',r:12},
   ];
   const cyc=(fl-1)%defs.length,loop=Math.floor((fl-1)/defs.length);
   const d=defs[cyc];
@@ -1202,6 +1214,64 @@ function bossUpdate(e,dt,slowMul){
           hazards.push({x:tx,y:ty,r:26,delay:0.85,life:0.35,dmg:2,tags:[],col:'#c88050',kind:'meteor',fromE:true});}
       }
     }
+  }else if(e.ai==='spider'){ // 蛛后：召唤蛛群 + 毒液扇
+    const enr=e.hp<e.maxhp*0.4;
+    moveEnt(e,dirx*e.spd*0.7*slowMul*dt,diry*e.spd*0.7*slowMul*dt);
+    if(e.t<=0){
+      if(Math.random()<0.45){const adds=enemies.filter(m=>!m.dead&&m.spawned).length;
+        if(adds<7&&lockRoom)for(let i=0;i<3;i++){const[mx,my]=roomPos(e.x+rnd(-26,26),e.y+rnd(-26,26));const m=makeEnemy('bat',mx,my);m.spawned=true;enemies.push(m);burst(mx,my,6,'#8a4a9a');}}
+      else{const a0=Math.atan2(diry,dirx);for(const off of(enr?[-0.4,-0.2,0,0.2,0.4]:[-0.25,0,0.25]))
+        hazards.push({x:px+Math.cos(a0+off)*24,y:py+Math.sin(a0+off)*24,r:22,delay:0.6,life:0.4,dmg:2,tags:[],col:'#80e060',kind:'curse',fromE:true});SFX.fire();}
+      e.t=enr?1.1:1.7;
+    }
+  }else if(e.ai==='berserk'){ // 狂战之魂：多段冲刺 + 旋风弹
+    const enr=e.hp<e.maxhp*0.45;
+    if(e.st==='chase'){moveEnt(e,dirx*e.spd*1.1*slowMul*dt,diry*e.spd*1.1*slowMul*dt);
+      if(e.t<=0){e.st=Math.random()<0.6?'aimdash':'spin';e.t=0.4;e.dashLeft=enr?3:2;}}
+    else if(e.st==='aimdash'){const a=Math.atan2(py-e.y,px-e.x);e.dx0=Math.cos(a);e.dy0=Math.sin(a);
+      if(e.t<=0){e.st='dash';e.t=0.28;e.dashOnce=false;SFX.swing();}}
+    else if(e.st==='dash'){moveEnt(e,e.dx0*340*dt,e.dy0*340*dt);
+      if(!e.dashOnce&&dist(e.x,e.y,px,py)<e.r+player.r+3){e.dashOnce=true;damagePlayer(2,e.x,e.y,e);}
+      if(e.t<=0){if(e.dashLeft>0){e.dashLeft--;e.st='aimdash';e.t=0.16;}else{e.st='chase';e.t=rnd(1,1.5);}}}
+    else if(e.st==='spin'){if(e.t<=0){e.st='chase';e.t=rnd(1,1.5);
+      for(let i=0;i<14;i++){const a=i/14*TAU;projs.push({x:e.x,y:e.y,vx:Math.cos(a)*130,vy:Math.sin(a)*130,r:2.5,dmg:1,type:'bolt',from:'e',life:2,col:'#ff6040'});}SFX.fire();}}
+  }else if(e.ai==='magma'){ // 熔岩魔：火焰痕迹 + 火弹扇
+    const enr=e.hp<e.maxhp*0.4;
+    moveEnt(e,dirx*e.spd*0.9*slowMul*dt,diry*e.spd*0.9*slowMul*dt);
+    e.trailCd=(e.trailCd||0)-dt;
+    if(e.trailCd<=0){e.trailCd=0.35;hazards.push({x:e.x,y:e.y,r:15,delay:0.1,life:1.6,dmg:1,tags:[],col:'#ff6020',kind:'meteor',fromE:true});}
+    if(e.t<=0){e.t=enr?1:1.6;const a0=Math.atan2(diry,dirx),n=enr?7:5;
+      for(let i=0;i<n;i++){const off=(i-(n-1)/2)*0.22;projs.push({x:e.x,y:e.y,vx:Math.cos(a0+off)*145,vy:Math.sin(a0+off)*145,r:3,dmg:1,type:'bolt',from:'e',life:2.2,col:'#ff8030'});}SFX.fire();}
+  }else if(e.ai==='frost'){ // 冰霜巨人：冰晶新星 + 冰锤砸地
+    const enr=e.hp<e.maxhp*0.4;
+    if(e.st==='chase'){moveEnt(e,dirx*e.spd*0.75*slowMul*dt,diry*e.spd*0.75*slowMul*dt);
+      if(e.t<=0){e.st=Math.random()<0.5?'novawind':'icewind';e.t=0.6;}}
+    else if(e.st==='novawind'){if(e.t<=0){e.st='chase';e.t=rnd(1.2,1.8);
+      const n=enr?18:12;for(let i=0;i<n;i++){const a=i/n*TAU;projs.push({x:e.x,y:e.y,vx:Math.cos(a)*100,vy:Math.sin(a)*100,r:3,dmg:1,type:'bolt',from:'e',life:2.4,col:'#9fe0ff'});}SFX.ice();}}
+    else if(e.st==='icewind'){if(e.t<=0){e.st='chase';e.t=rnd(1.2,1.8);shake=Math.max(shake,7);SFX.boom();
+      for(let i=0;i<4;i++)hazards.push({x:px+rnd(-30,30),y:py+rnd(-30,30),r:24,delay:0.5,life:0.4,dmg:2,tags:[],col:'#a0d8f0',kind:'meteor',fromE:true});}}
+  }else if(e.ai==='shadow'){ // 暗影刺客：瞬移背刺 + 飞镖扇
+    if(e.st==='chase'){moveEnt(e,dirx*e.spd*slowMul*dt,diry*e.spd*slowMul*dt);
+      if(e.t<=0){e.st=Math.random()<0.55?'blinkstab':'shuriken';e.t=0.35;}}
+    else if(e.st==='blinkstab'){if(e.t<=0){
+      let tx,ty,tr=0;do{const a=rnd(0,TAU);tx=px+Math.cos(a)*40;ty=py+Math.sin(a)*40;tr++;}while(solid(tx,ty)&&tr<12);
+      if(tr<12){burst(e.x,e.y,8,'#6a6a86');e.x=tx;e.y=ty;burst(e.x,e.y,8,'#6a6a86');}
+      const a=Math.atan2(py-e.y,px-e.x);e.dx0=Math.cos(a);e.dy0=Math.sin(a);e.st='dash';e.t=0.3;e.dashOnce=false;SFX.swing();}}
+    else if(e.st==='dash'){moveEnt(e,e.dx0*300*dt,e.dy0*300*dt);
+      if(!e.dashOnce&&dist(e.x,e.y,px,py)<e.r+player.r+3){e.dashOnce=true;damagePlayer(2,e.x,e.y,e);}
+      if(e.t<=0){e.st='chase';e.t=rnd(0.9,1.4);}}
+    else if(e.st==='shuriken'){if(e.t<=0){e.st='chase';e.t=rnd(1,1.5);
+      const a0=Math.atan2(py-e.y,px-e.x);for(const off of[-0.3,-0.15,0,0.15,0.3])projs.push({x:e.x,y:e.y,vx:Math.cos(a0+off)*160,vy:Math.sin(a0+off)*160,r:2.5,dmg:1,type:'bolt',from:'e',life:2,col:'#c0c0d0'});SFX.shoot();}}
+  }else if(e.ai==='void'){ // 虚空之眼：吸引玩家 + 多层环形波
+    const enr=e.hp<e.maxhp*0.4;
+    if(dp<74)moveEnt(e,-dirx*16*dt,-diry*16*dt);
+    if(!e.st||e.st==='chase'){e.st='chase';if(e.t<=0){e.st=Math.random()<0.5?'pull':'rings';e.t=enr?1.7:1.3;}}
+    else if(e.st==='pull'){if(player.roll<=0)moveEnt(player,(e.x-px)/dp*70*dt,(e.y-py)/dp*70*dt);
+      if(Math.random()<0.3)parts.push({x:px+rnd(-20,20),y:py+rnd(-20,20),vx:(e.x-px)*0.5,vy:(e.y-py)*0.5,life:0.3,size:2,col:'#a050d0',streak:true});
+      if(e.t<=0){e.st='chase';e.t=rnd(1,1.5);}}
+    else if(e.st==='rings'){if(e.t<=0){e.st='chase';e.t=rnd(1.2,1.8);
+      const off=Math.random()*0.3;for(let w=0;w<3;w++)for(let i=0;i<10;i++){const a=i/10*TAU+off+w*0.12;
+        projs.push({x:e.x,y:e.y,vx:Math.cos(a)*(70+w*35),vy:Math.sin(a)*(70+w*35),r:2.5,dmg:1,type:'bolt',from:'e',life:2.6,col:'#c060e0'});}SFX.fire();}}
   }
   // Boss接触伤害
   if(e.touchCd<=0&&e.st!=='jump'&&dist(e.x,e.y,px,py)<e.r+player.r+1){
@@ -1856,8 +1926,9 @@ function drawWorld(){
       ctx.fillStyle='rgba(110,190,255,.4)';ctx.beginPath();ctx.arc(p.x,p.y,5,0,TAU);ctx.fill();
       ctx.fillStyle='#8ad0ff';ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,TAU);ctx.fill();
     }else if(p.type==='bolt'){
-      ctx.fillStyle='rgba(255,80,140,.4)';ctx.beginPath();ctx.arc(p.x,p.y,4.5,0,TAU);ctx.fill();
-      ctx.fillStyle='#ff5080';ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,TAU);ctx.fill();
+      const bc=p.col||'#ff5080';
+      ctx.globalAlpha=0.4;ctx.fillStyle=bc;ctx.beginPath();ctx.arc(p.x,p.y,4.5,0,TAU);ctx.fill();ctx.globalAlpha=1;
+      ctx.fillStyle=bc;ctx.beginPath();ctx.arc(p.x,p.y,2.5,0,TAU);ctx.fill();
     }else if(p.type==='slash'){
       const a=Math.atan2(p.vy,p.vx);
       ctx.strokeStyle='rgba(170,225,255,.9)';ctx.lineWidth=2;
