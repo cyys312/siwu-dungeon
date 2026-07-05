@@ -1215,7 +1215,9 @@ function spawnBoss(R){
   ];
   const cyc=(fl-1)%defs.length,loop=Math.floor((fl-1)/defs.length);
   const d=defs[cyc];
-  const hp=Math.round(d.hp*(1+loop*0.9)); // 每循环一轮血量+90%
+  // 血量：基础×1.6（原Boss太脆秒杀）+ 随玩家等级缩放（等级≈构筑强度，防被高DPS秒）+ 每循环+90%
+  const powScale=1+0.10*Math.max(0,run.level-1); // 1级=×1，10级≈×1.9，18级≈×2.7
+  const hp=Math.round(d.hp*1.6*powScale*(1+loop*0.9));
   const name=loop>0?('强化·'+d.name):d.name;
   enemies.push(Object.assign(makeEnemy('slime',cx,cy),{
     type:'boss',boss:true,name,ai:d.ai,spr:d.spr,r:d.r,
