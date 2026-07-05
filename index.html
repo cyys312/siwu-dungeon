@@ -610,6 +610,7 @@ function genFloor(fl){
   rooms[mid[1]].type='shop';rooms[mid[1]].cleared=true;
   // 挑战房：第2层起有概率把一个中段房设为全精英挑战房，清房大奖
   if(fl>=2&&mid.length>2&&Math.random()<0.6)rooms[mid[2]].type='challenge';
+  if(fl>=2&&mid.length>3&&Math.random()<0.4)rooms[mid[3]].type='vault'; // 宝库房：精英守卫，清剿开箱
   // 地牢祭坛：每层在出生房放一座，随机献祭
   const ALT=['blood','greed','gamble','vigor'];
   altars.push({x:(start.x+start.w/2+3)*T,y:(start.y+start.h/2)*T,type:ALT[ri(0,ALT.length-1)],used:false});
@@ -624,7 +625,7 @@ function genFloor(fl){
   forge={x:(sr.x+sr.w-3)*T,y:(sr.y+2.5)*T,offer:fk[ri(0,fk.length-1)]};
   // 障碍物掩体（战斗/挑战/Boss房）：四周留3格环带保证连通，Boss房中心留空
   for(const R of rooms){
-    if(R.type!=='combat'&&R.type!=='boss'&&R.type!=='challenge')continue;
+    if(R.type!=='combat'&&R.type!=='boss'&&R.type!=='challenge'&&R.type!=='vault')continue;
     const n=ri(3,5);
     for(let i=0;i<n;i++){
       const ow=ri(1,2),oh=ri(1,2);
@@ -1180,7 +1181,8 @@ function spawnRoomEnemies(R){
     4:[['slime',.14],['bat',.14],['skel',.18],['ghost',.14],['imp',.14],['charger',.14],['bomber',.12]]};
   const tab=tables[Math.min(fl,4)];
   const challenge=R.type==='challenge';
-  let eliteCount=0,maxElite=challenge?99:1+Math.floor(fl/3);
+  const vault=R.type==='vault';
+  let eliteCount=0,maxElite=challenge?99:vault?3:1+Math.floor(fl/3);
   for(let i=0;i<n;i++){
     let x,y,tries=0;
     do{x=(R.x+1.5+rnd(0,R.w-3))*T;y=(R.y+1.5+rnd(0,R.h-3))*T;tries++;}
@@ -1189,7 +1191,7 @@ function spawnRoomEnemies(R){
     for(const[nm,p]of tab){if(r<p){ty=nm;break;}r-=p;}
     const e=makeEnemy(ty,x,y);
     // 精英：挑战房全精英，普通房按层数概率
-    if(!e.barrel&&(challenge||(fl>=2&&eliteCount<maxElite&&Math.random()<Math.min(0.35,0.05+0.035*fl)))){
+    if(!e.barrel&&(challenge||(vault&&eliteCount<3)||(fl>=2&&eliteCount<maxElite&&Math.random()<Math.min(0.35,0.05+0.035*fl)))){
       makeElite(e,fl);eliteCount++;
     }
     enemies.push(e);
@@ -1785,10 +1787,11 @@ function update(dt){
   // 房间锁定
   const R=roomAt(P.x,P.y,8);
   if(R&&!R.discovered)R.discovered=true;
-  if(R&&!R.cleared&&!R.locked&&(R.type==='combat'||R.type==='boss'||R.type==='challenge')){
+  if(R&&!R.cleared&&!R.locked&&(R.type==='combat'||R.type==='boss'||R.type==='challenge'||R.type==='vault')){
     R.locked=true;lockRoom=R;
     if(R.type==='boss')spawnBoss(R);else spawnRoomEnemies(R);
     if(R.type==='challenge')banner={txt:'⚠ 挑战房 ⚠',sub:'全为精英怪 · 通关获厚赏',t:2.4};
+    if(R.type==='vault')banner={txt:'✦ 宝库 ✦',sub:'击败精英守卫 · 开启宝藏',t:2.4};
     if(tc('R8')&&R.type!=='boss'){for(let k=0;k<5;k++){const mx=(R.x+2+Math.random()*(R.w-4))*T,my=(R.y+2+Math.random()*(R.h-4))*T;if(!solid(mx,my))dropMine(mx,my);}} // 遍地开花：布防地雷
     SFX.roar();
   }
@@ -1804,6 +1807,12 @@ function update(dt){
       const cx=(LR.x+LR.w/2)*T,cy=(LR.y+LR.h/2)*T;
       for(let i=0;i<2;i++)pickups.push({t:'heart',x:cx,y:cy,vx:rnd(-40,40),vy:rnd(-40,40),v:1});
       banner={txt:'挑战达成！',sub:'+30金币 · 免费天赋 · 回血',t:2.6};SFX.win();
+    }else if(LR.type==='vault'){ // 宝库：清剿守卫后开箱大赏（金币+双宝箱+回血）
+      const cx=(LR.x+LR.w/2)*T,cy=(LR.y+LR.h/2)*T;
+      run.coins+=20;
+      chests.push({x:cx-14,y:cy,open:false},{x:cx+14,y:cy,open:false});
+      for(let i=0;i<2;i++)pickups.push({t:'heart',x:cx,y:cy-10,vx:rnd(-40,40),vy:rnd(-40,40),v:1});
+      banner={txt:'宝库开启！',sub:'+20金币 · 双宝箱 · 回血',t:2.6};SFX.win();
     }
   }
   // 战斗开始时护甲
