@@ -401,6 +401,17 @@ const TALENTS=[
   {id:'A9',w:'ranger',s:'弓流',name:'疾射',max:3,desc:'蓄力速度 +25%'},
   {id:'D9',w:'ranger',s:'匕首流',name:'淬毒精通',max:2,req:'D4',desc:'中毒每秒伤害 +1'},
   {id:'R5',w:'ranger',s:'陷阱流',name:'高爆炸药',max:3,req:'R1',desc:'地雷伤害 +1'},
+  // ===== 扩充天赋（v1.3 波1：大锤机制天赋）=====
+  {id:'J6',w:'hammer',s:'重装流',name:'盾山',max:1,req:'J1',desc:'化护甲为攻——每拥有1层护甲，大锤伤害 +2'},
+  {id:'J7',w:'hammer',s:'重装流',name:'震地格挡',max:1,req:'J1',desc:'格挡成功时脚下爆发冲击波，击退并震伤周围敌人'},
+  {id:'J8',w:'hammer',s:'重装流',name:'不动如山',max:3,desc:'静止0.6秒后进入守势：受到的伤害 -1/级（移动即消失）'},
+  {id:'J9',w:'hammer',s:'重装流',name:'以牙还牙',max:1,req:'J3',desc:'护甲抵挡伤害时，向攻击者反弹一次强力伤害'},
+  {id:'W11',w:'hammer',s:'战士流',name:'嗜战狂潮',max:1,desc:'击杀敌人后1.5秒内攻速+25%、移速+25%（可刷新，越杀越猛）'},
+  {id:'W12',w:'hammer',s:'战士流',name:'蓄力重砸',max:1,desc:'停手1.1秒后的第一击伤害翻倍，并砸出一圈冲击波'},
+  {id:'W13',w:'hammer',s:'战士流',name:'破军',max:3,desc:'大锤对精英与Boss的伤害 +2/级（攻坚）'},
+  {id:'W14',w:'hammer',s:'战士流',name:'背水一战',max:1,desc:'生命低于50%时，大锤伤害 +40%'},
+  {id:'L6',w:'hammer',s:'雷霆流',name:'过载链',max:3,req:'L1',desc:'闪电链每多跳跃一名敌人，伤害递增 +25%/级'},
+  {id:'L7',w:'hammer',s:'雷霆流',name:'导电体',max:1,req:'L1',desc:'感电命中使敌人带电；带电敌人死亡时放出一圈电击'},
   // ===== 觉醒（该武器投入≥8点后解锁的终极天赋，每周目每武器限一次）=====
   {id:'AW_H',w:'hammer',s:'觉醒',name:'战神觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
   {id:'AW_S',w:'sword',s:'觉醒',name:'剑圣觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
@@ -588,7 +599,7 @@ function newRun(wpn){
     roll:0,rollcd:0,rdx:1,rdy:0,blocking:false,blockT:9,blockGap:9,blockHealCd:0,
     shield:0,armor:0,stealth:0,combo:0,hitCnt:0,sub:'bow',charge:-1,
     buffAtk:0,mvx:0,mvy:0,face:1,walk:0,target:null,
-    meteorArmed:0,thunderArmed:0,staticHits:0};
+    meteorArmed:0,thunderArmed:0,staticHits:0,rampageT:0,stillT:0,lastHmAt:-9};
   // 元进度加成
   player.maxhp+=META.up.hp;player.hp=player.maxhp;
   run.coins=META.up.gold*15;run.shopDmg=META.up.dmg;
@@ -602,7 +613,7 @@ function awardSouls(){
   META.souls+=run.soulsGain;saveMeta();
 }
 function moveSpeed(){
-  let s=84*(1+0.12*tc('D3'))*(1+0.10*tc('G2'))*(1+0.08*tc('G11'))*(1+0.05*META.up.speed);
+  let s=84*(1+0.12*tc('D3'))*(1+0.10*tc('G2'))*(1+0.08*tc('G11'))*(1+0.05*META.up.speed)*(player.rampageT>0?1.25:1);
   if(player.blocking)s*=tc('J4')>=1?0.7:0.4;
   return s;
 }
@@ -622,6 +633,7 @@ function dmgEnemy(e,d,o){
   if(o.fromPlayer!==false){
     if(player.buffAtk>0)d*=2;
     if(e.slowT>0)d+=tc('I2')+tc('I9');
+    if(o.melee&&run.weapon==='hammer'&&(e.boss||e.elite))d+=2*tc('W13'); // 破军：攻坚精英/Boss
   }
   const critCh=Math.min(0.7,0.09*run.mods.crit+0.06*tc('G14')); // 暴击几率:铸造词条+精准天赋
   if(isMod&&critCh>0&&Math.random()<critCh){d*=(2.2+0.5*tc('G15'));crit=true;}
@@ -640,6 +652,7 @@ function dmgEnemy(e,d,o){
     if(tc('I4')&&e.iceHits>=3&&!e.boss){e.frozen=2;e.iceHits=0;fText(e.x,e.y-16,'冻结!','#8ae0ff');}
   }
   if(o.tags&&o.tags.includes('fire')&&tc('P4')){e.burnT=2;e.burnD=tc('P4');}
+  if(o.tags&&o.tags.includes('shock')&&tc('L7'))e.chargedT=1.5; // 导电体：闪电命中使敌人带电
   if(o.melee&&run.weapon==='hammer'&&tc('W6')&&!e.barrel){e.echoT=0.4;e.echoD=tc('W6');} // 余震
   if(e.elite&&e.affixes.includes('thorns')&&o.melee){damagePlayer(1,e.x,e.y,e);fText(e.x,e.y-14,'荆棘','#b8f060');} // 精英荆棘反伤(近战)
   // 武器铸造词条：吸血 / 灼烧 / 弹射
@@ -680,12 +693,17 @@ function killEnemy(e){
     return;
   }
   run.kills++;
+  if(tc('W11')&&run.weapon==='hammer')player.rampageT=1.5; // 嗜战狂潮：击杀滚雪球
   burst(e.x,e.y,14,e.boss?'#ffd0ff':'#c0c0d0');
   SFX.poof();
   if(e.burnT>0&&tc('P6'))explodeAt(e.x,e.y,2,16); // 爆燃连锁：燃烧敌人死亡即爆炸
   if(e.poisonT>0&&tc('D6')){ // 毒爆：毒雾扩散
     burst(e.x,e.y,10,'#80e060');
     for(const m of enemies)if(!m.dead&&!m.barrel&&dist(m.x,m.y,e.x,e.y)<44){m.poisonT=2.5;m.poisonD=Math.max(1,e.poisonD||1);}
+  }
+  if(e.chargedT>0&&tc('L7')){ // 导电体：带电敌人死亡放出一圈电击
+    burst(e.x,e.y,10,'#a8e0ff');parts.push({x:e.x,y:e.y,vx:0,vy:0,life:0.2,size:34,col:'rgba(168,224,255,.5)',ring:true});
+    for(const m of enemies)if(!m.dead&&!m.barrel&&m!==e&&dist(m.x,m.y,e.x,e.y)<40){bolts.push({x1:e.x,y1:e.y,x2:m.x,y2:m.y,life:0.14});dmgEnemy(m,3+run.shopDmg,{col:'#a8e0ff',fromPlayer:true,dot:true});}
   }
   // 精英死亡词缀效果
   if(e.elite){
@@ -735,6 +753,12 @@ function tryBlock(sx,sy,d,src){
   const refl=Math.ceil(d*(1+0.75*tc('J2'))*(perfect?2.5:1));
   if(src&&!src.dead)dmgEnemy(src,refl,{fromPlayer:true,col:'#ffd966',kx:Math.cos(ang)*120,ky:Math.sin(ang)*120});
   else projs.push({x:player.x,y:player.y,vx:Math.cos(ang)*180,vy:Math.sin(ang)*180,r:3,dmg:refl,type:'arcane',from:'p',life:1});
+  if(tc('J7')){ // 震地格挡：脚下爆发冲击波
+    parts.push({x:player.x,y:player.y,vx:0,vy:0,life:0.25,size:48,col:'rgba(255,217,102,.4)',ring:true});shake=Math.max(shake,4);
+    for(const e of enemies)if(!e.dead&&!e.barrel&&e!==src&&dist(e.x,e.y,player.x,player.y)<48){
+      const a2=Math.atan2(e.y-player.y,e.x-player.x);
+      dmgEnemy(e,Math.ceil(refl*0.6),{fromPlayer:true,col:'#ffd966',kx:Math.cos(a2)*150,ky:Math.sin(a2)*150});}
+  }
   if(tc('J4')>=2&&player.blockHealCd<=0){heal(1);player.blockHealCd=4;}
   return true;
 }
@@ -743,8 +767,11 @@ function damagePlayer(d,sx,sy,src){
   if(player.inv>0||player.roll>0)return;
   if(tc('G9')&&src&&!src.dead&&!src.boss)dmgEnemy(src,2*tc('G9'),{fromPlayer:true,dot:true,col:'#8ad0a0'}); // 荆棘之甲反弹
   if(tryBlock(sx,sy,d,src))return;
-  if(player.armor>0){player.armor--;fText(player.x,player.y-12,'护甲!','#aab4c2');SFX.block();return;}
+  if(player.armor>0){player.armor--;fText(player.x,player.y-12,'护甲!','#aab4c2');SFX.block();
+    if(tc('J9')&&src&&!src.dead&&!src.boss){const a2=Math.atan2(src.y-player.y,src.x-player.x);dmgEnemy(src,6+run.shopDmg,{fromPlayer:true,col:'#aab4c2',kx:Math.cos(a2)*160,ky:Math.sin(a2)*160});} // 以牙还牙：护甲反弹
+    return;}
   if(player.shield>0){player.shield--;fText(player.x,player.y-12,'护盾!','#4ab8e8');SFX.block();return;}
+  if(tc('J8')&&player.stillT>0.6)d=Math.max(1,d-tc('J8')); // 不动如山：守势减伤
   player.hp-=d;player.inv=0.9*(1+0.25*tc('G12'));shake=Math.max(shake,4);SFX.hurt();
   burst(player.x,player.y,10,'#e34a5a');
   if(player.stealth>0)player.stealth=0;
@@ -766,11 +793,22 @@ function tryAttack(){
   const wasStealth=player.stealth>0;
   if(w==='hammer'){
     const rng=26*(1+0.2*tc('W3')+0.12*tc('W9'));
-    player.cd=0.85/(1+0.15*tc('W4'));
+    player.cd=0.85/((1+0.15*tc('W4'))*(player.rampageT>0?1.25:1)); // 嗜战狂潮攻速
     swing={t:0,dur:0.2,dir:aim,rng,col:'#e0c080',wide:PI*1.5};
     SFX.swing();
+    let hdmg=3+tc('W2')+tc('W7')+tc('W8')+tc('W10')+run.shopDmg;
+    if(tc('J6'))hdmg+=2*player.armor;                                 // 盾山：化护甲为攻
+    if(tc('W14')&&player.hp*2<=player.maxhp)hdmg=Math.round(hdmg*1.4); // 背水一战
+    const charged=tc('W12')&&(gtime-(player.lastHmAt||-9))>1.1;        // 蓄力重砸
+    player.lastHmAt=gtime;
+    if(charged)hdmg*=2;
     let hits=0,hx=0,hy=0;
-    meleeHit(aim,rng,PI*1.5,3+tc('W2')+tc('W7')+tc('W8')+tc('W10')+run.shopDmg,240,e=>{hits++;hx=e.x;hy=e.y;});
+    meleeHit(aim,rng,PI*1.5,hdmg,240,e=>{hits++;hx=e.x;hy=e.y;});
+    if(charged&&hits>0){ // 蓄力冲击波
+      parts.push({x:hx,y:hy,vx:0,vy:0,life:0.28,size:rng*1.3,col:'rgba(255,200,120,.55)',ring:true});
+      shake=Math.max(shake,9);hitFlash(0.5,'#ffe0a0');fText(player.x,player.y-18,'蓄力！','#ffd090');
+      for(const e of enemies)if(!e.dead&&!e.barrel&&dist(e.x,e.y,hx,hy)<34+e.r)dmgEnemy(e,Math.round(hdmg*0.5),{col:'#ffd090',kx:(e.x-hx)*5,ky:(e.y-hy)*5});
+    }
     if(hits>0){
       freeze=Math.max(freeze,0.09);shake=Math.max(shake,7);SFX.hit();hitFlash(0.4,'#ffe0a0');
       // 命中冲击波环
@@ -915,7 +953,7 @@ function zapChain(x,y,count,dmg,seed){
     for(const e of enemies){if(e.dead||e.barrel||hit.has(e))continue;const d=dist(sx,sy,e.x,e.y);if(d<bd){bd=d;best=e;}}
     if(!best)break;
     bolts.push({x1:sx,y1:sy,x2:best.x,y2:best.y,life:0.16});
-    dmgEnemy(best,dmg,{col:'#a8e0ff',tags:['shock']});
+    dmgEnemy(best,Math.round(dmg*(1+0.25*tc('L6')*i)),{col:'#a8e0ff',tags:['shock']}); // 过载链：越往后跳越强
     hit.add(best);sx=best.x;sy=best.y;
   }
   if(hit.size)SFX.ice();
@@ -1030,6 +1068,7 @@ function enemyUpdate(e,dt){
   if(e.flash>0)e.flash-=dt;
   // 持续伤害先结算：冻结/眩晕的敌人也要吃燃烧与中毒
   if(e.slowT>0)e.slowT-=dt;
+  if(e.chargedT>0)e.chargedT-=dt;
   if(e.burnT>0){e.burnT-=dt;e.burnAcc+=dt;if(e.burnAcc>=1){e.burnAcc-=1;dmgEnemy(e,e.burnD,{fromPlayer:true,dot:true,col:'#ff8040',kx:0,ky:0});if(e.dead)return;}}
   if(e.poisonT>0){e.poisonT-=dt;e.poisonAcc+=dt;if(e.poisonAcc>=1){e.poisonAcc-=1;dmgEnemy(e,e.poisonD,{fromPlayer:true,dot:true,col:'#80e060',kx:0,ky:0});if(e.dead)return;}}
   if(e.echoT>0){e.echoT-=dt;if(e.echoT<=0){burst(e.x,e.y,6,'#e0c080');dmgEnemy(e,e.echoD,{fromPlayer:true,dot:true,col:'#e0c080'});if(e.dead)return;}} // 余震
@@ -1490,7 +1529,7 @@ function update(dt){
   // 冷却
   P.cd=Math.max(0,P.cd-dt*(run.hasteMul||1));P.inv=Math.max(0,P.inv-dt); // hasteMul：觉醒加速全武器出手
   P.rollcd=Math.max(0,P.rollcd-dt);P.blockHealCd=Math.max(0,P.blockHealCd-dt);
-  P.stealth=Math.max(0,P.stealth-dt);P.buffAtk=Math.max(0,P.buffAtk-dt);
+  P.stealth=Math.max(0,P.stealth-dt);P.buffAtk=Math.max(0,P.buffAtk-dt);P.rampageT=Math.max(0,(P.rampageT||0)-dt);
   if(run.weapon==='mage')P.mana=Math.min(P.maxmana,P.mana+(20+8*tc('U3'))*dt);
   // 自动索敌：武器朝向最近的敌人；没有敌人时朝移动方向
   mouse.wx=mouse.x+cam.x;mouse.wy=mouse.y+cam.y;
@@ -1515,6 +1554,7 @@ function update(dt){
   let my=(keys.KeyS||keys.ArrowDown?1:0)-(keys.KeyW||keys.ArrowUp?1:0);
   const ml=Math.hypot(mx,my);
   if(ml>0){mx/=ml;my/=ml;P.rdx=mx;P.rdy=my;P.walk+=dt*8;if(!P.target)P.aim=Math.atan2(my,mx);}
+  if(ml>0||P.roll>0)P.stillT=0;else P.stillT=(P.stillT||0)+dt; // 不动如山：静止计时
   // 翻滚：纯闪避位移（不再绑定键石技能）
   if(pressed.Space&&P.rollcd<=0&&P.roll<=0){
     P.roll=0.18;P.rollcd=0.7;SFX.stealth();
