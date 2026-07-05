@@ -387,6 +387,20 @@ const TALENTS=[
   {id:'U5',w:'mage',s:'奥术流',name:'奥能',max:4,desc:'奥术伤害 +1'},
   {id:'A8',w:'ranger',s:'弓流',name:'穿甲箭',max:4,desc:'箭矢伤害 +1'},
   {id:'D8',w:'ranger',s:'匕首流',name:'致命',max:3,desc:'匕首伤害 +1'},
+  // ===== 扩充天赋（v1.2批次2：暴击体系 + 各流派补充）=====
+  {id:'G14',w:'all',s:'通用',name:'精准',max:3,desc:'暴击几率 +6%（暴击造成2.2倍伤害）'},
+  {id:'G15',w:'all',s:'通用',name:'会心一击',max:2,desc:'暴击伤害提升（+50%/级）'},
+  {id:'G16',w:'all',s:'通用',name:'疾跑大师',max:2,desc:'Shift 疾跑速度提升'},
+  {id:'W10',w:'hammer',s:'战士流',name:'战锤精通',max:4,desc:'大锤伤害 +1'},
+  {id:'B10',w:'sword',s:'吸血流',name:'剑刃精通',max:4,desc:'长剑伤害 +1'},
+  {id:'F6',w:'sword',s:'御剑流',name:'剑冢精炼',max:3,req:'F1',desc:'飞剑伤害 +1'},
+  {id:'E5',w:'sword',s:'疾风流',name:'疾风之刃',max:3,req:'E1',desc:'长剑伤害 +1'},
+  {id:'P9',w:'mage',s:'火法',name:'灼热',max:4,desc:'火焰/爆炸伤害 +1'},
+  {id:'I9',w:'mage',s:'冰法',name:'极寒精通',max:3,desc:'对被减速敌人的伤害 +1'},
+  {id:'U6',w:'mage',s:'奥术流',name:'奥术精研',max:4,desc:'奥术伤害 +1'},
+  {id:'A9',w:'ranger',s:'弓流',name:'疾射',max:3,desc:'蓄力速度 +25%'},
+  {id:'D9',w:'ranger',s:'匕首流',name:'淬毒精通',max:2,req:'D4',desc:'中毒每秒伤害 +1'},
+  {id:'R5',w:'ranger',s:'陷阱流',name:'高爆炸药',max:3,req:'R1',desc:'地雷伤害 +1'},
   // ===== 觉醒（该武器投入≥8点后解锁的终极天赋，每周目每武器限一次）=====
   {id:'AW_H',w:'hammer',s:'觉醒',name:'战神觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
   {id:'AW_S',w:'sword',s:'觉醒',name:'剑圣觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
@@ -607,9 +621,10 @@ function dmgEnemy(e,d,o){
   let crit=false;
   if(o.fromPlayer!==false){
     if(player.buffAtk>0)d*=2;
-    if(e.slowT>0)d+=tc('I2');
+    if(e.slowT>0)d+=tc('I2')+tc('I9');
   }
-  if(isMod&&run.mods.crit>0&&Math.random()<Math.min(0.6,0.09*run.mods.crit)){d*=2.2;crit=true;} // 暴击
+  const critCh=Math.min(0.7,0.09*run.mods.crit+0.06*tc('G14')); // 暴击几率:铸造词条+精准天赋
+  if(isMod&&critCh>0&&Math.random()<critCh){d*=(2.2+0.5*tc('G15'));crit=true;}
   d=Math.max(1,Math.round(d));
   e.hp-=d;e.flash=0.12;
   fText(e.x+rnd(-4,4),e.y-10,(crit?d+'!':d),crit?'#ffd040':(o.col||'#fff'),crit?1.7:(d>=8?1.6:d>=4?1.25:1)); // 暴击/大伤害数字放大
@@ -755,7 +770,7 @@ function tryAttack(){
     swing={t:0,dur:0.2,dir:aim,rng,col:'#e0c080',wide:PI*1.5};
     SFX.swing();
     let hits=0,hx=0,hy=0;
-    meleeHit(aim,rng,PI*1.5,3+tc('W2')+tc('W7')+tc('W8')+run.shopDmg,240,e=>{hits++;hx=e.x;hy=e.y;});
+    meleeHit(aim,rng,PI*1.5,3+tc('W2')+tc('W7')+tc('W8')+tc('W10')+run.shopDmg,240,e=>{hits++;hx=e.x;hy=e.y;});
     if(hits>0){
       freeze=Math.max(freeze,0.09);shake=Math.max(shake,7);SFX.hit();hitFlash(0.4,'#ffe0a0');
       // 命中冲击波环
@@ -775,7 +790,7 @@ function tryAttack(){
     if(gtime-(player.comboLast||0)>1.2)player.combo=0; // 停手1.2秒重置连击
     player.comboLast=gtime;
     player.combo=(player.combo||0)+1;
-    let dmg=1+run.shopDmg+tc('B6')+tc('B8')+tc('E3'); // 破空:突进攻击额外伤害
+    let dmg=1+run.shopDmg+tc('B6')+tc('B8')+tc('B10')+tc('E3')+tc('E5'); // 破空:突进攻击额外伤害
     const third=tc('B3')&&player.combo%3===0;
     if(third)dmg*=2;
     swing={t:0,dur:0.13,dir:aim,rng:22,col:third?'#ffe066':'#cfe4f5',wide:PI*0.9};
@@ -807,12 +822,12 @@ function tryAttack(){
     player.mana-=cost;
     if(primary==='arcane'){
       player.cd=0.32;SFX.shoot();
-      const adm=(1+run.shopDmg+tc('U2')+tc('U5'))*stealthMul;
+      const adm=(1+run.shopDmg+tc('U2')+tc('U5')+tc('U6'))*stealthMul;
       const enh=tc('U1')>0; // 奥术涌动：穿透+分裂
       projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*(enh?230:200),vy:Math.sin(aim)*(enh?230:200),r:enh?4:3,dmg:adm,type:'arcane',from:'p',life:1.6,pierce:enh,split:enh?2:0,hitSet:enh?new Set():undefined});
     }else if(primary==='fire'){
       player.cd=0.5;SFX.fire();
-      projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*170,vy:Math.sin(aim)*170,r:4,dmg:(2+run.shopDmg+tc('P7')+tc('P8'))*stealthMul,type:'fire',from:'p',life:1.8});
+      projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*170,vy:Math.sin(aim)*170,r:4,dmg:(2+run.shopDmg+tc('P7')+tc('P8')+tc('P9'))*stealthMul,type:'fire',from:'p',life:1.8});
     }else{
       player.cd=0.55;SFX.ice();
       const wdt=tc('I3');
@@ -833,7 +848,7 @@ function tryAttack(){
       let hits=0;
       meleeHit(aim,16,PI*0.6,(1+run.shopDmg+tc('D8'))*stealthMul,60,e=>{
         hits++;
-        if(tc('D4')){e.poisonT=2;e.poisonD=tc('D4')+tc('D7');}
+        if(tc('D4')){e.poisonT=2;e.poisonD=tc('D4')+tc('D7')+tc('D9');}
       },{melee:true,stealthHit:wasStealth});
       if(hits>0){SFX.hit();if(wasStealth&&tc('D2'))fText(player.x,player.y-16,'背刺!','#b090ff');}
       if(wasStealth)player.stealth=0;
@@ -913,7 +928,7 @@ function explodeMine(m){
   burst(m.x,m.y,18,'#ff9040');shake=Math.max(shake,5);SFX.boom();hitFlash(0.35,'#ffd090');
   parts.push({x:m.x,y:m.y,vx:0,vy:0,life:0.25,size:r,col:'rgba(255,150,60,.45)',ring:true});
   for(const e of enemies){if(e.dead||e.barrel)continue;
-    if(dist(e.x,e.y,m.x,m.y)<r+e.r)dmgEnemy(e,3+tc('R2')+run.shopDmg,{tags:['fire'],col:'#ffab60',kx:(e.x-m.x)*5,ky:(e.y-m.y)*5});}
+    if(dist(e.x,e.y,m.x,m.y)<r+e.r)dmgEnemy(e,3+tc('R2')+tc('R5')+run.shopDmg,{tags:['fire'],col:'#ffab60',kx:(e.x-m.x)*5,ky:(e.y-m.y)*5});}
   m.dead=true;
 }
 
@@ -1517,7 +1532,7 @@ function update(dt){
     moveEnt(P,P.rdx*moveSpeed()*3.2*dt,P.rdy*moveSpeed()*3.2*dt);
     if(P.roll<=0&&run.weapon==='ranger'&&tc('D1')){P.stealth=1.5;SFX.stealth();}
   }else if(ml>0){
-    const sprint=(keys.ShiftLeft||keys.ShiftRight)?1.5:1; // Shift 疾跑
+    const sprint=(keys.ShiftLeft||keys.ShiftRight)?(1.5+0.15*tc('G16')):1; // Shift 疾跑
     if(sprint>1&&(Math.abs(mx)>0.01||Math.abs(my)>0.01)&&Math.random()<0.4)parts.push({x:P.x,y:P.y+4,vx:-mx*20,vy:-my*20,life:0.2,size:1.5,col:'#8a94a8',streak:true});
     moveEnt(P,mx*moveSpeed()*sprint*dt,my*moveSpeed()*sprint*dt);
     P.walk+=dt*8*(sprint-0.999);
@@ -1525,7 +1540,7 @@ function update(dt){
   // 攻击
   if(run.weapon==='ranger'&&P.sub==='bow'){
     if(mouse.down&&P.charge<0&&P.cd<=0)P.charge=0;
-    if(P.charge>=0)P.charge=Math.min(1,P.charge+dt/(0.8/(1+0.35*tc('A3'))));
+    if(P.charge>=0)P.charge=Math.min(1,P.charge+dt/(0.8/(1+0.35*tc('A3')+0.25*tc('A9'))));
     if(!mouse.down&&P.charge>=0)releaseBow();
   }else if(mouse.down)tryAttack();
   if(swing){swing.t+=dt;if(swing.t>=swing.dur)swing=null;}
@@ -1709,7 +1724,7 @@ function updateSwords(dt){
       const d=dist(s.x,s.y,t.x,t.y)||1;
       s.x+=(t.x-s.x)/d*230*spdM*dt;s.y+=(t.y-s.y)/d*230*spdM*dt;
       if(d<t.r+4){
-        dmgEnemy(t,1+tc('F4')+run.shopDmg,{col:'#bfe0ff',kx:(t.x-player.x)*3,ky:(t.y-player.y)*3,melee:false});
+        dmgEnemy(t,1+tc('F4')+tc('F6')+run.shopDmg,{col:'#bfe0ff',kx:(t.x-player.x)*3,ky:(t.y-player.y)*3,melee:false});
         SFX.hit();
         if(tc('F5')&&!s.bounced){
           s.bounced=true;
