@@ -2449,8 +2449,8 @@ function drawUI(){
   ctx.fillStyle='#100c18';ctx.fillRect(mmx-2,mmy-2,mmW+4,mmH+4);
   for(const r of rooms){
     if(!r.discovered)continue;
-    const cols={start:'#4a6a9a',combat:r.cleared?'#3a3348':'#6a4a52',chest:'#9a8040',shop:'#4a7a58',boss:'#8a3040',challenge:r.cleared?'#3a3348':'#b06020'};
-    ctx.fillStyle=cols[r.type];
+    const cols={start:'#4a6a9a',combat:r.cleared?'#3a3348':'#6a4a52',chest:'#9a8040',shop:'#4a7a58',boss:'#8a3040',challenge:r.cleared?'#3a3348':'#b06020',vault:r.cleared?'#3a3348':'#c8a828'};
+    ctx.fillStyle=cols[r.type]||'#3a3348';
     ctx.fillRect(mmx+r.x*sxk,mmy+r.y*syk,Math.max(2,r.w*sxk),Math.max(2,r.h*syk));
   }
   ctx.fillStyle='#fff';
@@ -2550,7 +2550,7 @@ function drawTitle(){
   ctx.fillStyle='#2a2140';ctx.fillText('四 武 地 牢',VW/2+2,62+2);
   ctx.fillStyle='#ffe9c0';ctx.fillText('四 武 地 牢',VW/2,62);
   ctx.font='9px monospace';ctx.fillStyle='#8a7fa8';
-  ctx.fillText('— 每把武器 · 两种流派 · 抽卡构筑 · 无限深渊 —',VW/2,80);
+  ctx.fillText('— 12 流派 · 200 天赋 · 10 Boss · 抽卡构筑 · 无限深渊 —',VW/2,80);
   // 武器选择卡
   const ks=Object.keys(WPNS);
   const cw=104,chh=128,gap=10;
