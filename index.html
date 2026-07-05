@@ -423,6 +423,17 @@ const TALENTS=[
   {id:'E6',w:'sword',s:'疾风流',name:'影袭',max:1,req:'E1',desc:'疾刺突进命中敌人时，攻击冷却减半（连突压制）'},
   {id:'E7',w:'sword',s:'疾风流',name:'疾风之护',max:1,req:'E1',desc:'疾刺突进期间获得短暂无敌帧'},
   {id:'E8',w:'sword',s:'疾风流',name:'疾影残像',max:1,req:'E1',desc:'疾刺后在起点留下残像，短暂后爆裂造成范围伤害'},
+  // ===== 扩充天赋（v1.3 波3：法师机制天赋）=====
+  {id:'P10',w:'mage',s:'火法',name:'烈焰四溅',max:1,desc:'火球爆炸时向四周溅射3枚小火星，二次点燃'},
+  {id:'P11',w:'mage',s:'火法',name:'引燃',max:1,req:'P4',desc:'对已燃烧的敌人造成的伤害 +30%（火上浇油）'},
+  {id:'P12',w:'mage',s:'火法',name:'野火',max:1,req:'P4',desc:'燃烧的敌人死亡时，火焰蔓延感染周围敌人'},
+  {id:'I10',w:'mage',s:'冰法',name:'碎冰',max:1,desc:'对减速的敌人伤害+30%，对冻结的敌人伤害翻倍'},
+  {id:'I11',w:'mage',s:'冰法',name:'极地领域',max:1,desc:'你周身散发寒气，持续减速附近的敌人'},
+  {id:'I12',w:'mage',s:'冰法',name:'冰川回响',max:1,req:'I1',desc:'冰川蔓延到尽头时炸开一圈冰晶新星'},
+  {id:'U7',w:'mage',s:'奥术流',name:'奥术过载',max:1,desc:'法力高于50%时，奥术伤害 +25%'},
+  {id:'U8',w:'mage',s:'奥术流',name:'奥术回响',max:1,req:'U1',desc:'奥术飞弹分裂出的追加弹也会再分裂一次'},
+  {id:'U9',w:'mage',s:'奥术流',name:'法力护盾',max:1,desc:'受到伤害时若法力≥25，改为消耗25点法力免疫该次伤害'},
+  {id:'U10',w:'mage',s:'奥术流',name:'灵能汲取',max:1,desc:'击杀敌人回复12点法力'},
   // ===== 觉醒（该武器投入≥8点后解锁的终极天赋，每周目每武器限一次）=====
   {id:'AW_H',w:'hammer',s:'觉醒',name:'战神觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
   {id:'AW_S',w:'sword',s:'觉醒',name:'剑圣觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
@@ -647,6 +658,8 @@ function dmgEnemy(e,d,o){
     if(o.melee&&run.weapon==='hammer'&&(e.boss||e.elite))d+=2*tc('W13'); // 破军：攻坚精英/Boss
     if(o.melee&&run.weapon==='sword'&&tc('B13')&&e.hp<e.maxhp*0.3)d*=2;   // 处决：斩杀残血
     if(e.markT>0)d*=1.2;                                                   // 剑意：易伤
+    if(run.weapon==='mage'&&tc('P11')&&e.burnT>0)d*=1.3;                   // 引燃：对燃烧敌人增伤
+    if(run.weapon==='mage'&&tc('I10')){if(e.frozen>0)d*=2;else if(e.slowT>0)d*=1.3;} // 碎冰
   }
   const critCh=Math.min(0.7,0.09*run.mods.crit+0.06*tc('G14')); // 暴击几率:铸造词条+精准天赋
   if(isMod&&critCh>0&&Math.random()<critCh){d*=(2.2+0.5*tc('G15'));crit=true;}
@@ -707,6 +720,7 @@ function killEnemy(e){
   }
   run.kills++;
   if(tc('W11')&&run.weapon==='hammer')player.rampageT=1.5; // 嗜战狂潮：击杀滚雪球
+  if(tc('U10')&&run.weapon==='mage')player.mana=Math.min(player.maxmana,player.mana+12); // 灵能汲取
   burst(e.x,e.y,14,e.boss?'#ffd0ff':'#c0c0d0');
   SFX.poof();
   if(e.burnT>0&&tc('P6'))explodeAt(e.x,e.y,2,16); // 爆燃连锁：燃烧敌人死亡即爆炸
@@ -717,6 +731,10 @@ function killEnemy(e){
   if(e.chargedT>0&&tc('L7')){ // 导电体：带电敌人死亡放出一圈电击
     burst(e.x,e.y,10,'#a8e0ff');parts.push({x:e.x,y:e.y,vx:0,vy:0,life:0.2,size:34,col:'rgba(168,224,255,.5)',ring:true});
     for(const m of enemies)if(!m.dead&&!m.barrel&&m!==e&&dist(m.x,m.y,e.x,e.y)<40){bolts.push({x1:e.x,y1:e.y,x2:m.x,y2:m.y,life:0.14});dmgEnemy(m,3+run.shopDmg,{col:'#a8e0ff',fromPlayer:true,dot:true});}
+  }
+  if(e.burnT>0&&tc('P12')){ // 野火：燃烧敌人死亡时火焰蔓延
+    burst(e.x,e.y,10,'#ff8040');
+    for(const m of enemies)if(!m.dead&&!m.barrel&&m!==e&&dist(m.x,m.y,e.x,e.y)<44){m.burnT=2;m.burnD=Math.max(m.burnD||0,e.burnD||1);}
   }
   // 精英死亡词缀效果
   if(e.elite){
@@ -785,6 +803,7 @@ function damagePlayer(d,sx,sy,src){
     return;}
   if(player.shield>0){player.shield--;fText(player.x,player.y-12,'护盾!','#4ab8e8');SFX.block();return;}
   if(tc('F9')){const so=swords.find(s=>s.st==='orbit');if(so&&Math.random()<0.4){so.st='fly';so.bounced=false;let b=null,bd=150;for(const e of enemies)if(!e.dead&&!e.barrel){const dd=dist(player.x,player.y,e.x,e.y);if(dd<bd){bd=dd;b=e;}}so.tgt=b;fText(player.x,player.y-12,'灵剑护主!','#bfe0ff');SFX.block();burst(player.x,player.y,8,'#bfe0ff');player.inv=0.6;return;}} // 灵剑护主
+  if(run.weapon==='mage'&&tc('U9')&&player.mana>=25){player.mana-=25;fText(player.x,player.y-12,'法力护盾!','#8fb4ff');SFX.block();burst(player.x,player.y,8,'#8fb4ff');player.inv=0.3;return;} // 法力护盾：耗蓝免伤
   if(tc('J8')&&player.stillT>0.6)d=Math.max(1,d-tc('J8')); // 不动如山：守势减伤
   player.hp-=d;player.inv=0.9*(1+0.25*tc('G12'));shake=Math.max(shake,4);SFX.hurt();
   burst(player.x,player.y,10,'#e34a5a');
@@ -883,9 +902,9 @@ function tryAttack(){
     player.mana-=cost;
     if(primary==='arcane'){
       player.cd=0.32;SFX.shoot();
-      const adm=(1+run.shopDmg+tc('U2')+tc('U5')+tc('U6'))*stealthMul;
+      const adm=(1+run.shopDmg+tc('U2')+tc('U5')+tc('U6'))*stealthMul*(tc('U7')&&player.mana>player.maxmana*0.5?1.25:1); // 奥术过载：法力充足增伤
       const enh=tc('U1')>0; // 奥术涌动：穿透+分裂
-      projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*(enh?230:200),vy:Math.sin(aim)*(enh?230:200),r:enh?4:3,dmg:adm,type:'arcane',from:'p',life:1.6,pierce:enh,split:enh?2:0,hitSet:enh?new Set():undefined});
+      projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*(enh?230:200),vy:Math.sin(aim)*(enh?230:200),r:enh?4:3,dmg:adm,type:'arcane',from:'p',life:1.6,pierce:enh,split:enh?(1+tc('U8')):0,hitSet:enh?new Set():undefined});
     }else if(primary==='fire'){
       player.cd=0.5;SFX.fire();
       projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*170,vy:Math.sin(aim)*170,r:4,dmg:(2+run.shopDmg+tc('P7')+tc('P8')+tc('P9'))*stealthMul,type:'fire',from:'p',life:1.8});
@@ -900,6 +919,7 @@ function tryAttack(){
             r:10,delay:seg*0.055,life:0.5,dmg:(1+run.shopDmg+tc('I7')+tc('I8'))*stealthMul,tags:['ice'],col:'#9fe0ff',kind:'ice'});
         }
       }
+      if(tc('I12')){const ex=player.x+Math.cos(aim)*90,ey=player.y+Math.sin(aim)*90;for(let k=0;k<6;k++){const a=k/6*TAU;hazards.push({x:ex+Math.cos(a)*12,y:ey+Math.sin(a)*12,r:12,delay:0.42,life:0.4,dmg:(1+run.shopDmg+tc('I7')+tc('I8'))*stealthMul,tags:['ice'],col:'#bfefff',kind:'ice'});}} // 冰川回响：尽头冰晶新星
     }
   }else if(w==='ranger'){
     if(player.sub==='dagger'){
@@ -958,6 +978,9 @@ function releaseBow(){
     for(let i=0;i<5;i++)hazards.push({x:tx+rnd(-20,20),y:ty+rnd(-20,20),r:11,delay:0.45+i*0.07,life:0.4,dmg:2+run.shopDmg,tags:[],col:'#c8f0a0',kind:'rain'});
   }
   if(player.stealth>0){player.stealth=0;}
+}
+function fireSplash(x,y,dmg){ // 烈焰四溅：爆炸溅射小火星（noSplash防止递归级联）
+  for(let k=0;k<3;k++){const a=Math.random()*TAU;projs.push({x:x,y:y,vx:Math.cos(a)*150,vy:Math.sin(a)*150,r:3,dmg:Math.max(1,Math.round(dmg*0.5)),type:'fire',from:'p',life:0.5,noSplash:true});}
 }
 function explodeAt(x,y,dmg,base){
   const r=base*(1+0.3*tc('P3'));
@@ -1616,6 +1639,7 @@ function update(dt){
         dmgEnemy(e,1,{tags:['ice'],dot:true,col:'#9fe0ff'});}
     if(blizzard.t<=0)blizzard=null;
   }
+  if(tc('I11'))for(const e of enemies)if(!e.dead&&!e.barrel&&dist(e.x,e.y,P.x,P.y)<70){e.slowT=Math.max(e.slowT,0.3);e.slowMul=Math.min(e.slowMul===undefined?0.6:e.slowMul,0.6);} // 极地领域：寒气光环
   // 地雷
   for(const m of mines){
     if(m.dead)continue;
@@ -1663,7 +1687,7 @@ function update(dt){
     p.x+=p.vx*dt;p.y+=p.vy*dt;
     if(p.life<=0){p.dead=true;continue;}
     if(solid(p.x,p.y)){
-      if(p.type==='fire')explodeAt(p.x,p.y,p.dmg,20);
+      if(p.type==='fire'){explodeAt(p.x,p.y,p.dmg,20);if(tc('P10')&&!p.noSplash)fireSplash(p.x,p.y,p.dmg);}
       p.dead=true;continue;
     }
     if(p.from==='p'){
@@ -1671,11 +1695,11 @@ function update(dt){
         if(e.dead)continue;
         if(p.hitSet&&p.hitSet.has(e))continue;
         if(dist(p.x,p.y,e.x,e.y)<p.r+e.r){
-          if(p.type==='fire'){explodeAt(p.x,p.y,p.dmg,20);p.dead=true;break;}
+          if(p.type==='fire'){explodeAt(p.x,p.y,p.dmg,20);if(tc('P10')&&!p.noSplash)fireSplash(p.x,p.y,p.dmg);p.dead=true;break;}
           dmgEnemy(e,p.dmg,{kx:p.vx*0.3,ky:p.vy*0.3,col:p.type==='arcane'?'#80d0ff':'#fff'});
-          if(p.split>0){ // 奥术涌动：命中分裂出追加弹
+          if(p.split>0){ // 奥术涌动：命中分裂出追加弹（奥术回响让子弹再分裂一代）
             const a=Math.atan2(p.vy,p.vx);
-            for(const off of[0.6,-0.6])projs.push({x:p.x,y:p.y,vx:Math.cos(a+off)*180,vy:Math.sin(a+off)*180,r:2.5,dmg:Math.max(1,p.dmg-1),type:'arcane',from:'p',life:0.8});
+            for(const off of[0.6,-0.6])projs.push({x:p.x,y:p.y,vx:Math.cos(a+off)*180,vy:Math.sin(a+off)*180,r:2.5,dmg:Math.max(1,p.dmg-1),type:'arcane',from:'p',life:0.8,split:p.split-1});
             p.split=0;
           }
           if(p.pierce){if(!p.hitSet)p.hitSet=new Set();p.hitSet.add(e);}
