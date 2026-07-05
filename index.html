@@ -471,7 +471,7 @@ const TALENTS=[
   {id:'E9',w:'sword',s:'疾风流',name:'罡气纵横',max:1,req:'E1',desc:'疾刺突进后的这一击攻击范围大幅扩大'},
   {id:'P13',w:'mage',s:'火法',name:'火墙',max:1,desc:'施放火球时沿飞行路径点燃一道火墙'},
   {id:'I13',w:'mage',s:'冰法',name:'冰裂',max:1,desc:'击中冻结的敌人时引发冰爆，波及周围'},
-  {id:'U11',w:'mage',s:'奥术流',name:'奥能过载',max:1,desc:'法力全满时，下一次施法免费且威力翻倍'},
+  {id:'U11',w:'mage',s:'奥术流',name:'奥能过载',max:1,desc:'法力全满时，下一次施法威力翻倍，随后清空全部法力（蓄能一击）'},
   {id:'A13',w:'ranger',s:'弓流',name:'疾风连射',max:1,desc:'速点射击（未蓄力）改为3连发且无冷却惩罚'},
   {id:'D14',w:'ranger',s:'匕首流',name:'影舞乱刃',max:1,desc:'隐身状态下匕首攻击速度翻倍'},
   {id:'R9',w:'ranger',s:'陷阱流',name:'连环引爆',max:1,req:'R1',desc:'地雷爆炸会连锁引爆附近的其它地雷'},
@@ -741,8 +741,9 @@ function dmgEnemy(e,d,o){
     if(tc('G40')&&player.hp<=1)d*=2;                           // 破釜沉舟：1血翻倍
     if(tc('G44')&&(player.shield>0||player.armor>0))d*=1.15;   // 坚不可摧：有护盾/甲增伤
   }
-  const critCh=Math.min(0.9,0.09*run.mods.crit+0.06*tc('G14')+(o.critBonus||0)+(run.aw2r?0.25:0)+(o.stealthHit&&tc('D15')?1:0)); // 暴击:词条+精准+蓄力箭+百步穿杨+影袭大师
-  if(isMod&&critCh>0&&Math.random()<critCh){d*=(2.2+0.5*tc('G15'));crit=true;}
+  const critCh=Math.min(0.9,0.09*run.mods.crit+0.06*tc('G14')+(o.critBonus||0)+(run.aw2r?0.25:0)); // 暴击:词条+精准+蓄力箭+百步穿杨
+  const forceCrit=o.stealthHit&&tc('D15'); // 影袭大师：背刺必定暴击(不受90%上限限制)
+  if(isMod&&(forceCrit||(critCh>0&&Math.random()<critCh))){d*=(2.2+0.5*tc('G15'));crit=true;}
   d=Math.max(1,Math.round(d));
   if(crit&&tc('G36')){for(const m of enemies)if(!m.dead&&!m.barrel&&m!==e&&dist(m.x,m.y,e.x,e.y)<26)dmgEnemy(m,Math.max(1,Math.round(d*0.4)),{col:'#ffd040',fromPlayer:true,dot:true});} // 会心连锁：暴击余波
   if(run.weapon==='mage'&&tc('I13')&&e.frozen>0&&o.fromPlayer!==false&&!o.dot){burst(e.x,e.y,10,'#bfefff');for(const m of enemies)if(!m.dead&&!m.barrel&&m!==e&&dist(m.x,m.y,e.x,e.y)<32)dmgEnemy(m,3+run.shopDmg,{tags:['ice'],col:'#bfefff',fromPlayer:true,dot:true});} // 冰裂
@@ -996,9 +997,10 @@ function tryAttack(){
     const primary=tc('P1')?'fire':(tc('I1')?'ice':'arcane');
     let cost=primary==='fire'?15:primary==='ice'?12:Math.max(2,6-2*tc('U3'));
     if(run.aw2m)cost=Math.ceil(cost*0.5); // 元素支配：法术消耗减半
-    const oc=tc('U11')&&player.mana>=player.maxmana; // 奥能过载：满蓝下次施法免费翻倍
+    const oc=tc('U11')&&player.mana>=player.maxmana; // 奥能过载：满蓝下次施法翻倍
     if(player.mana<cost){fText(player.x,player.y-12,'法力不足','#8fb4ff');player.cd=0.25;return;}
-    player.mana-=oc?0:cost;
+    player.mana-=cost;
+    if(oc)player.mana=0; // 过载后清空全部法力，避免满蓝永久触发(修复无限免费双倍)
     const ocm=oc?2:1;
     if(oc)fText(player.x,player.y-16,'过载!','#c8a0ff');
     if(primary==='arcane'){
