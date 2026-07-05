@@ -412,6 +412,17 @@ const TALENTS=[
   {id:'W14',w:'hammer',s:'战士流',name:'背水一战',max:1,desc:'生命低于50%时，大锤伤害 +40%'},
   {id:'L6',w:'hammer',s:'雷霆流',name:'过载链',max:3,req:'L1',desc:'闪电链每多跳跃一名敌人，伤害递增 +25%/级'},
   {id:'L7',w:'hammer',s:'雷霆流',name:'导电体',max:1,req:'L1',desc:'感电命中使敌人带电；带电敌人死亡时放出一圈电击'},
+  // ===== 扩充天赋（v1.3 波2：长剑机制天赋）=====
+  {id:'B11',w:'sword',s:'吸血流',name:'连击大师',max:1,desc:'连击越高伤害越高：每2段连击 +1 伤害（满10段 +5，停手重置）'},
+  {id:'B12',w:'sword',s:'吸血流',name:'嗜血狂热',max:1,req:'B1',desc:'每次吸血回血时，攻击速度 +35% 持续1秒'},
+  {id:'B13',w:'sword',s:'吸血流',name:'处决',max:1,desc:'对生命低于30%的敌人，长剑伤害翻倍（斩杀残血）'},
+  {id:'B14',w:'sword',s:'吸血流',name:'剑刃风暴',max:1,key:1,desc:'每累计8段连击，下一击引爆周身剑刃风暴，横扫四周敌人'},
+  {id:'F7',w:'sword',s:'御剑流',name:'剑气环绕',max:1,req:'F1',desc:'环绕的飞剑接触到敌人也会造成持续切割伤害'},
+  {id:'F8',w:'sword',s:'御剑流',name:'剑意',max:1,req:'F1',desc:'飞剑命中的敌人被烙下剑意，受到的所有伤害 +20% 持续3秒'},
+  {id:'F9',w:'sword',s:'御剑流',name:'灵剑护主',max:1,req:'F1',desc:'受到伤害时，40%几率由一把飞剑替你格挡并反击（需有飞剑在轨道）'},
+  {id:'E6',w:'sword',s:'疾风流',name:'影袭',max:1,req:'E1',desc:'疾刺突进命中敌人时，攻击冷却减半（连突压制）'},
+  {id:'E7',w:'sword',s:'疾风流',name:'疾风之护',max:1,req:'E1',desc:'疾刺突进期间获得短暂无敌帧'},
+  {id:'E8',w:'sword',s:'疾风流',name:'疾影残像',max:1,req:'E1',desc:'疾刺后在起点留下残像，短暂后爆裂造成范围伤害'},
   // ===== 觉醒（该武器投入≥8点后解锁的终极天赋，每周目每武器限一次）=====
   {id:'AW_H',w:'hammer',s:'觉醒',name:'战神觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
   {id:'AW_S',w:'sword',s:'觉醒',name:'剑圣觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
@@ -599,7 +610,7 @@ function newRun(wpn){
     roll:0,rollcd:0,rdx:1,rdy:0,blocking:false,blockT:9,blockGap:9,blockHealCd:0,
     shield:0,armor:0,stealth:0,combo:0,hitCnt:0,sub:'bow',charge:-1,
     buffAtk:0,mvx:0,mvy:0,face:1,walk:0,target:null,
-    meteorArmed:0,thunderArmed:0,staticHits:0,rampageT:0,stillT:0,lastHmAt:-9};
+    meteorArmed:0,thunderArmed:0,staticHits:0,rampageT:0,stillT:0,lastHmAt:-9,frenzyT:0};
   // 元进度加成
   player.maxhp+=META.up.hp;player.hp=player.maxhp;
   run.coins=META.up.gold*15;run.shopDmg=META.up.dmg;
@@ -634,6 +645,8 @@ function dmgEnemy(e,d,o){
     if(player.buffAtk>0)d*=2;
     if(e.slowT>0)d+=tc('I2')+tc('I9');
     if(o.melee&&run.weapon==='hammer'&&(e.boss||e.elite))d+=2*tc('W13'); // 破军：攻坚精英/Boss
+    if(o.melee&&run.weapon==='sword'&&tc('B13')&&e.hp<e.maxhp*0.3)d*=2;   // 处决：斩杀残血
+    if(e.markT>0)d*=1.2;                                                   // 剑意：易伤
   }
   const critCh=Math.min(0.7,0.09*run.mods.crit+0.06*tc('G14')); // 暴击几率:铸造词条+精准天赋
   if(isMod&&critCh>0&&Math.random()<critCh){d*=(2.2+0.5*tc('G15'));crit=true;}
@@ -771,6 +784,7 @@ function damagePlayer(d,sx,sy,src){
     if(tc('J9')&&src&&!src.dead&&!src.boss){const a2=Math.atan2(src.y-player.y,src.x-player.x);dmgEnemy(src,6+run.shopDmg,{fromPlayer:true,col:'#aab4c2',kx:Math.cos(a2)*160,ky:Math.sin(a2)*160});} // 以牙还牙：护甲反弹
     return;}
   if(player.shield>0){player.shield--;fText(player.x,player.y-12,'护盾!','#4ab8e8');SFX.block();return;}
+  if(tc('F9')){const so=swords.find(s=>s.st==='orbit');if(so&&Math.random()<0.4){so.st='fly';so.bounced=false;let b=null,bd=150;for(const e of enemies)if(!e.dead&&!e.barrel){const dd=dist(player.x,player.y,e.x,e.y);if(dd<bd){bd=dd;b=e;}}so.tgt=b;fText(player.x,player.y-12,'灵剑护主!','#bfe0ff');SFX.block();burst(player.x,player.y,8,'#bfe0ff');player.inv=0.6;return;}} // 灵剑护主
   if(tc('J8')&&player.stillT>0.6)d=Math.max(1,d-tc('J8')); // 不动如山：守势减伤
   player.hp-=d;player.inv=0.9*(1+0.25*tc('G12'));shake=Math.max(shake,4);SFX.hurt();
   burst(player.x,player.y,10,'#e34a5a');
@@ -824,19 +838,23 @@ function tryAttack(){
     if(tc('W5'))projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*150,vy:Math.sin(aim)*150,r:7,dmg:2+run.shopDmg,type:'shock',from:'p',life:0.65,pierce:true,hitSet:new Set()});
   }else if(w==='sword'){
     const low=player.hp*3<=player.maxhp;
-    player.cd=0.22/((1+0.15*tc('B2'))*(1+0.10*tc('B7'))*(1+0.08*tc('B9'))*(1+0.1*tc('E2'))*(low&&tc('B4')?1.4:1));
+    player.cd=0.22/((1+0.15*tc('B2'))*(1+0.10*tc('B7'))*(1+0.08*tc('B9'))*(1+0.1*tc('E2'))*(low&&tc('B4')?1.4:1)*(player.frenzyT>0?1.35:1)); // 嗜血狂热攻速
     if(gtime-(player.comboLast||0)>1.2)player.combo=0; // 停手1.2秒重置连击
     player.comboLast=gtime;
     player.combo=(player.combo||0)+1;
     let dmg=1+run.shopDmg+tc('B6')+tc('B8')+tc('B10')+tc('E3')+tc('E5'); // 破空:突进攻击额外伤害
+    if(tc('B11'))dmg+=Math.floor(Math.min(player.combo,10)*0.5); // 连击大师：每2连击+1伤害（低基础也有感知）
     const third=tc('B3')&&player.combo%3===0;
     if(third)dmg*=2;
     swing={t:0,dur:0.13,dir:aim,rng:22,col:third?'#ffe066':'#cfe4f5',wide:PI*0.9};
     SFX.swing();
     // 疾风流·疾刺：向瞄准方向短距突进
     if(tc('E1')){
+      const _ox=player.x,_oy=player.y;
       const dd=14+6*tc('E2');
       moveEnt(player,Math.cos(aim)*dd,Math.sin(aim)*dd);
+      if(tc('E7'))player.inv=Math.max(player.inv,0.18); // 疾风之护：突进无敌帧
+      if(tc('E8'))hazards.push({x:_ox,y:_oy,r:24,delay:0.3,life:0.3,dmg:dmg,tags:[],col:'#cfe4f5',kind:'cyclone'}); // 疾影残像：起点爆裂
       for(let i=0;i<4;i++)parts.push({x:player.x-Math.cos(aim)*i*4,y:player.y-Math.sin(aim)*i*4,vx:-Math.cos(aim)*30,vy:-Math.sin(aim)*30,life:0.18,size:2.5,col:'#cfe4f5',streak:true});
       if(tc('E4')){ // 风暴之眼：突进终点旋刃气旋
         hazards.push({x:player.x,y:player.y,r:26,delay:0.05,life:0.4,dmg:dmg,tags:[],col:'#dff0ff',kind:'cyclone'});
@@ -848,10 +866,15 @@ function tryAttack(){
       if(tc('B1')){
         player.hitCnt++;
         const need=(low&&tc('B4'))?3:5;
-        if(player.hitCnt>=need){player.hitCnt=0;heal(1);}
+        if(player.hitCnt>=need){player.hitCnt=0;heal(1);if(tc('B12'))player.frenzyT=1;} // 嗜血狂热：回血触发狂热
       }
     },{melee:true});
     if(hits>0)SFX.hit();
+    if(tc('E6')&&tc('E1')&&hits>0)player.cd*=0.5; // 影袭：突进命中减半冷却
+    if(tc('B14')&&player.combo%8===0){ // 剑刃风暴：每8连击横扫
+      parts.push({x:player.x,y:player.y,vx:0,vy:0,life:0.3,size:46,col:'rgba(207,228,245,.5)',ring:true});shake=Math.max(shake,6);SFX.hit();fText(player.x,player.y-18,'剑刃风暴!','#dff0ff');
+      for(const e of enemies)if(!e.dead&&!e.barrel&&dist(e.x,e.y,player.x,player.y)<46)dmgEnemy(e,dmg*2,{col:'#dff0ff',kx:(e.x-player.x)*4,ky:(e.y-player.y)*4});
+    }
     if(tc('B5'))projs.push({x:player.x,y:player.y,vx:Math.cos(aim)*230,vy:Math.sin(aim)*230,r:5,dmg,type:'slash',from:'p',life:0.55,pierce:true,hitSet:new Set()});
   }else if(w==='mage'){
     const primary=tc('P1')?'fire':(tc('I1')?'ice':'arcane');
@@ -1069,6 +1092,7 @@ function enemyUpdate(e,dt){
   // 持续伤害先结算：冻结/眩晕的敌人也要吃燃烧与中毒
   if(e.slowT>0)e.slowT-=dt;
   if(e.chargedT>0)e.chargedT-=dt;
+  if(e.markT>0)e.markT-=dt;
   if(e.burnT>0){e.burnT-=dt;e.burnAcc+=dt;if(e.burnAcc>=1){e.burnAcc-=1;dmgEnemy(e,e.burnD,{fromPlayer:true,dot:true,col:'#ff8040',kx:0,ky:0});if(e.dead)return;}}
   if(e.poisonT>0){e.poisonT-=dt;e.poisonAcc+=dt;if(e.poisonAcc>=1){e.poisonAcc-=1;dmgEnemy(e,e.poisonD,{fromPlayer:true,dot:true,col:'#80e060',kx:0,ky:0});if(e.dead)return;}}
   if(e.echoT>0){e.echoT-=dt;if(e.echoT<=0){burst(e.x,e.y,6,'#e0c080');dmgEnemy(e,e.echoD,{fromPlayer:true,dot:true,col:'#e0c080'});if(e.dead)return;}} // 余震
@@ -1529,7 +1553,7 @@ function update(dt){
   // 冷却
   P.cd=Math.max(0,P.cd-dt*(run.hasteMul||1));P.inv=Math.max(0,P.inv-dt); // hasteMul：觉醒加速全武器出手
   P.rollcd=Math.max(0,P.rollcd-dt);P.blockHealCd=Math.max(0,P.blockHealCd-dt);
-  P.stealth=Math.max(0,P.stealth-dt);P.buffAtk=Math.max(0,P.buffAtk-dt);P.rampageT=Math.max(0,(P.rampageT||0)-dt);
+  P.stealth=Math.max(0,P.stealth-dt);P.buffAtk=Math.max(0,P.buffAtk-dt);P.rampageT=Math.max(0,(P.rampageT||0)-dt);P.frenzyT=Math.max(0,(P.frenzyT||0)-dt);
   if(run.weapon==='mage')P.mana=Math.min(P.maxmana,P.mana+(20+8*tc('U3'))*dt);
   // 自动索敌：武器朝向最近的敌人；没有敌人时朝移动方向
   mouse.wx=mouse.x+cam.x;mouse.wy=mouse.y+cam.y;
@@ -1752,6 +1776,7 @@ function updateSwords(dt){
     if(s.st==='orbit'){
       s.ang+=dt*2.4*spdM;
       s.x=player.x+Math.cos(s.ang)*17;s.y=player.y+Math.sin(s.ang)*17;
+      if(tc('F7')){s.tcd=(s.tcd||0)-dt;if(s.tcd<=0){for(const e of enemies){if(e.dead||e.barrel)continue;if(dist(s.x,s.y,e.x,e.y)<e.r+5){dmgEnemy(e,1+tc('F4')+tc('F6')+run.shopDmg,{col:'#bfe0ff',dot:true});s.tcd=0.3;break;}}}} // 剑气环绕：接触切割
       s.cd-=dt;
       if(s.cd<=0){
         let best=null,bd=115;
@@ -1765,6 +1790,7 @@ function updateSwords(dt){
       s.x+=(t.x-s.x)/d*230*spdM*dt;s.y+=(t.y-s.y)/d*230*spdM*dt;
       if(d<t.r+4){
         dmgEnemy(t,1+tc('F4')+tc('F6')+run.shopDmg,{col:'#bfe0ff',kx:(t.x-player.x)*3,ky:(t.y-player.y)*3,melee:false});
+        if(tc('F8'))t.markT=3; // 剑意：烙印易伤
         SFX.hit();
         if(tc('F5')&&!s.bounced){
           s.bounced=true;
