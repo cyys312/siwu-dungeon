@@ -434,6 +434,17 @@ const TALENTS=[
   {id:'U8',w:'mage',s:'奥术流',name:'奥术回响',max:1,req:'U1',desc:'奥术飞弹分裂出的追加弹也会再分裂一次'},
   {id:'U9',w:'mage',s:'奥术流',name:'法力护盾',max:1,desc:'受到伤害时若法力≥25，改为消耗25点法力免疫该次伤害'},
   {id:'U10',w:'mage',s:'奥术流',name:'灵能汲取',max:1,desc:'击杀敌人回复12点法力'},
+  // ===== 扩充天赋（v1.3 波4：游侠机制天赋）=====
+  {id:'A10',w:'ranger',s:'弓流',name:'精准射击',max:1,desc:'满蓄力的箭矢暴击几率大幅提升（+40%）'},
+  {id:'A11',w:'ranger',s:'弓流',name:'猎手专注',max:1,desc:'静止不动时蓄力速度提升80%（定点狙击）'},
+  {id:'A12',w:'ranger',s:'弓流',name:'爆裂箭',max:1,desc:'满蓄力的箭矢命中时引发小型爆炸'},
+  {id:'D10',w:'ranger',s:'匕首流',name:'弱点',max:1,desc:'对中毒的敌人造成的伤害 +25%'},
+  {id:'D11',w:'ranger',s:'匕首流',name:'淬毒之刃',max:1,req:'D4',desc:'匕首命中叠加毒层（最多5层），层数越高毒伤越高'},
+  {id:'D12',w:'ranger',s:'匕首流',name:'致命印记',max:1,req:'D2',desc:'背刺命中烙下印记，敌人受到的所有伤害 +20%'},
+  {id:'D13',w:'ranger',s:'匕首流',name:'吸髓',max:1,desc:'匕首每命中6次回复1点生命'},
+  {id:'R6',w:'ranger',s:'陷阱流',name:'磁暴地雷',max:1,req:'R1',desc:'地雷爆炸会减速并短暂眩晕命中的敌人'},
+  {id:'R7',w:'ranger',s:'陷阱流',name:'集束地雷',max:1,req:'R1',desc:'地雷爆炸时炸裂出3颗子地雷四散布防'},
+  {id:'R8',w:'ranger',s:'陷阱流',name:'遍地开花',max:1,req:'R1',desc:'进入战斗房时自动在场地布置若干地雷'},
   // ===== 觉醒（该武器投入≥8点后解锁的终极天赋，每周目每武器限一次）=====
   {id:'AW_H',w:'hammer',s:'觉醒',name:'战神觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
   {id:'AW_S',w:'sword',s:'觉醒',name:'剑圣觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
@@ -660,8 +671,9 @@ function dmgEnemy(e,d,o){
     if(e.markT>0)d*=1.2;                                                   // 剑意：易伤
     if(run.weapon==='mage'&&tc('P11')&&e.burnT>0)d*=1.3;                   // 引燃：对燃烧敌人增伤
     if(run.weapon==='mage'&&tc('I10')){if(e.frozen>0)d*=2;else if(e.slowT>0)d*=1.3;} // 碎冰
+    if(run.weapon==='ranger'&&tc('D10')&&e.poisonT>0)d*=1.25; // 弱点：对中毒敌人增伤
   }
-  const critCh=Math.min(0.7,0.09*run.mods.crit+0.06*tc('G14')); // 暴击几率:铸造词条+精准天赋
+  const critCh=Math.min(0.85,0.09*run.mods.crit+0.06*tc('G14')+(o.critBonus||0)); // 暴击几率:铸造词条+精准天赋+蓄力箭
   if(isMod&&critCh>0&&Math.random()<critCh){d*=(2.2+0.5*tc('G15'));crit=true;}
   d=Math.max(1,Math.round(d));
   e.hp-=d;e.flash=0.12;
@@ -929,7 +941,9 @@ function tryAttack(){
       let hits=0;
       meleeHit(aim,16,PI*0.6,(1+run.shopDmg+tc('D8'))*stealthMul,60,e=>{
         hits++;
-        if(tc('D4')){e.poisonT=2;e.poisonD=tc('D4')+tc('D7')+tc('D9');}
+        if(tc('D4')){e.poisonT=2;e.poisonStacks=Math.min((e.poisonStacks||0)+1,5);e.poisonD=tc('D4')+tc('D7')+tc('D9')+(tc('D11')?e.poisonStacks:0);} // 淬毒之刃：叠毒层
+        if(tc('D12')&&wasStealth)e.markT=3; // 致命印记：背刺易伤
+        if(tc('D13')){player.dgHit=(player.dgHit||0)+1;if(player.dgHit>=6){player.dgHit=0;heal(1);}} // 吸髓：命中回血
       },{melee:true,stealthHit:wasStealth});
       if(hits>0){SFX.hit();if(wasStealth&&tc('D2'))fText(player.x,player.y-16,'背刺!','#b090ff');}
       if(wasStealth)player.stealth=0;
@@ -962,17 +976,19 @@ function releaseBow(){
   const stealthMul=(player.stealth>0&&tc('D2'))?3:1;
   const base=(1+Math.round(6*c))+tc('A4')+tc('A7')+tc('A8')+run.shopDmg; // 蓄力连续放大：1(速点)→7(蓄满)
   const pierce=c>=1&&tc('A1')>0;
+  const cb=(c>=1&&tc('A10'))?0.4:0;      // 精准射击：满蓄力暴击加成
+  const ex=(c>=1&&tc('A12'))?true:false; // 爆裂箭：满蓄力命中爆炸
   const spd=220+200*c;
   const shots=[0];
   for(let i=1;i<=tc('A2');i++)shots.push(i%2?0.18*Math.ceil(i/2):-0.18*Math.ceil(i/2));
   shots.forEach((off,i)=>{
     projs.push({x:player.x,y:player.y,vx:Math.cos(aim+off)*spd,vy:Math.sin(aim+off)*spd,
-      r:2.5+2*c,dmg:(i===0?base:Math.max(1,base-1))*stealthMul,type:'arrow',from:'p',life:1.3,pierce,bounce:pierce?0:tc('A6'),hitSet:new Set()});
+      r:2.5+2*c,dmg:(i===0?base:Math.max(1,base-1))*stealthMul,type:'arrow',from:'p',life:1.3,pierce,bounce:pierce?0:tc('A6'),hitSet:new Set(),critBonus:cb,explode:ex});
   });
   SFX.shoot();
   // 点射保底：贴脸/背后重叠的敌人直接命中一发，避免箭矢擦过
   for(const e of enemies){if(e.dead||e.barrel)continue;
-    if(dist(e.x,e.y,player.x,player.y)<e.r+14){dmgEnemy(e,base*stealthMul,{col:'#d8e8c8',kx:Math.cos(aim)*80,ky:Math.sin(aim)*80});break;}}
+    if(dist(e.x,e.y,player.x,player.y)<e.r+14){dmgEnemy(e,base*stealthMul,{col:'#d8e8c8',kx:Math.cos(aim)*80,ky:Math.sin(aim)*80,critBonus:cb});if(ex)explodeAt(e.x,e.y,Math.max(1,Math.round(base*0.6)),16);break;}}
   if(c>=1&&tc('A5')){
     const rt=player.target,tx=rt?rt.x:player.x+Math.cos(aim)*90,ty=rt?rt.y:player.y+Math.sin(aim)*90;
     for(let i=0;i<5;i++)hazards.push({x:tx+rnd(-20,20),y:ty+rnd(-20,20),r:11,delay:0.45+i*0.07,life:0.4,dmg:2+run.shopDmg,tags:[],col:'#c8f0a0',kind:'rain'});
@@ -1012,7 +1028,9 @@ function explodeMine(m){
   burst(m.x,m.y,18,'#ff9040');shake=Math.max(shake,5);SFX.boom();hitFlash(0.35,'#ffd090');
   parts.push({x:m.x,y:m.y,vx:0,vy:0,life:0.25,size:r,col:'rgba(255,150,60,.45)',ring:true});
   for(const e of enemies){if(e.dead||e.barrel)continue;
-    if(dist(e.x,e.y,m.x,m.y)<r+e.r)dmgEnemy(e,3+tc('R2')+tc('R5')+run.shopDmg,{tags:['fire'],col:'#ffab60',kx:(e.x-m.x)*5,ky:(e.y-m.y)*5});}
+    if(dist(e.x,e.y,m.x,m.y)<r+e.r){dmgEnemy(e,3+tc('R2')+tc('R5')+run.shopDmg,{tags:['fire'],col:'#ffab60',kx:(e.x-m.x)*5,ky:(e.y-m.y)*5});
+      if(tc('R6')){e.slowT=Math.max(e.slowT,2);e.slowMul=Math.min(e.slowMul===undefined?0.5:e.slowMul,0.4);if(!e.boss)e.stun=Math.max(e.stun||0,0.6);}}} // 磁暴地雷：减速+眩晕
+  if(tc('R7')&&!m.cluster){for(let k=0;k<3;k++){const a=k/3*TAU;mines.push({x:m.x+Math.cos(a)*14,y:m.y+Math.sin(a)*14,arm:0.3,r:6,trig:28,life:8,cluster:true});}} // 集束地雷：子地雷四散
   m.dead=true;
 }
 
@@ -1116,6 +1134,7 @@ function enemyUpdate(e,dt){
   if(e.slowT>0)e.slowT-=dt;
   if(e.chargedT>0)e.chargedT-=dt;
   if(e.markT>0)e.markT-=dt;
+  if(e.poisonT<=0&&e.poisonStacks)e.poisonStacks=0; // 毒层随中毒结束清零
   if(e.burnT>0){e.burnT-=dt;e.burnAcc+=dt;if(e.burnAcc>=1){e.burnAcc-=1;dmgEnemy(e,e.burnD,{fromPlayer:true,dot:true,col:'#ff8040',kx:0,ky:0});if(e.dead)return;}}
   if(e.poisonT>0){e.poisonT-=dt;e.poisonAcc+=dt;if(e.poisonAcc>=1){e.poisonAcc-=1;dmgEnemy(e,e.poisonD,{fromPlayer:true,dot:true,col:'#80e060',kx:0,ky:0});if(e.dead)return;}}
   if(e.echoT>0){e.echoT-=dt;if(e.echoT<=0){burst(e.x,e.y,6,'#e0c080');dmgEnemy(e,e.echoD,{fromPlayer:true,dot:true,col:'#e0c080'});if(e.dead)return;}} // 余震
@@ -1627,7 +1646,7 @@ function update(dt){
   // 攻击
   if(run.weapon==='ranger'&&P.sub==='bow'){
     if(mouse.down&&P.charge<0&&P.cd<=0)P.charge=0;
-    if(P.charge>=0)P.charge=Math.min(1,P.charge+dt/(0.8/(1+0.35*tc('A3')+0.25*tc('A9'))));
+    if(P.charge>=0)P.charge=Math.min(1,P.charge+dt*(tc('A11')&&P.stillT>0.15?1.8:1)/(0.8/(1+0.35*tc('A3')+0.25*tc('A9')))); // 猎手专注：静止快蓄
     if(!mouse.down&&P.charge>=0)releaseBow();
   }else if(mouse.down)tryAttack();
   if(swing){swing.t+=dt;if(swing.t>=swing.dur)swing=null;}
@@ -1661,6 +1680,7 @@ function update(dt){
     R.locked=true;lockRoom=R;
     if(R.type==='boss')spawnBoss(R);else spawnRoomEnemies(R);
     if(R.type==='challenge')banner={txt:'⚠ 挑战房 ⚠',sub:'全为精英怪 · 通关获厚赏',t:2.4};
+    if(tc('R8')&&R.type!=='boss'){for(let k=0;k<5;k++){const mx=(R.x+2+Math.random()*(R.w-4))*T,my=(R.y+2+Math.random()*(R.h-4))*T;if(!solid(mx,my))dropMine(mx,my);}} // 遍地开花：布防地雷
     SFX.roar();
   }
   if(lockRoom&&enemies.every(e=>e.dead||e.barrel)){
@@ -1696,7 +1716,8 @@ function update(dt){
         if(p.hitSet&&p.hitSet.has(e))continue;
         if(dist(p.x,p.y,e.x,e.y)<p.r+e.r){
           if(p.type==='fire'){explodeAt(p.x,p.y,p.dmg,20);if(tc('P10')&&!p.noSplash)fireSplash(p.x,p.y,p.dmg);p.dead=true;break;}
-          dmgEnemy(e,p.dmg,{kx:p.vx*0.3,ky:p.vy*0.3,col:p.type==='arcane'?'#80d0ff':'#fff'});
+          dmgEnemy(e,p.dmg,{kx:p.vx*0.3,ky:p.vy*0.3,col:p.type==='arcane'?'#80d0ff':'#fff',critBonus:p.critBonus});
+          if(p.explode)explodeAt(p.x,p.y,Math.max(1,Math.round(p.dmg*0.6)),16); // 爆裂箭：命中爆炸
           if(p.split>0){ // 奥术涌动：命中分裂出追加弹（奥术回响让子弹再分裂一代）
             const a=Math.atan2(p.vy,p.vx);
             for(const off of[0.6,-0.6])projs.push({x:p.x,y:p.y,vx:Math.cos(a+off)*180,vy:Math.sin(a+off)*180,r:2.5,dmg:Math.max(1,p.dmg-1),type:'arcane',from:'p',life:0.8,split:p.split-1});
