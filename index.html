@@ -445,6 +445,23 @@ const TALENTS=[
   {id:'R6',w:'ranger',s:'陷阱流',name:'磁暴地雷',max:1,req:'R1',desc:'地雷爆炸会减速并短暂眩晕命中的敌人'},
   {id:'R7',w:'ranger',s:'陷阱流',name:'集束地雷',max:1,req:'R1',desc:'地雷爆炸时炸裂出3颗子地雷四散布防'},
   {id:'R8',w:'ranger',s:'陷阱流',name:'遍地开花',max:1,req:'R1',desc:'进入战斗房时自动在场地布置若干地雷'},
+  // ===== 扩充天赋（v1.4 波5a：通用机制天赋）=====
+  {id:'G17',w:'all',s:'通用',name:'翻滚斩',max:1,desc:'翻滚穿过敌人时对其造成伤害并击退'},
+  {id:'G18',w:'all',s:'通用',name:'灵动',max:1,desc:'翻滚后1秒内攻击冷却恢复速度 +30%'},
+  {id:'G19',w:'all',s:'通用',name:'嗜杀',max:1,desc:'连续击杀叠加杀意，每层伤害+4%（上限10层），4秒不杀清空'},
+  {id:'G20',w:'all',s:'通用',name:'黄金律',max:1,desc:'每持有80金币，攻击伤害 +1'},
+  {id:'G21',w:'all',s:'通用',name:'险境求生',max:2,desc:'生命低于35%时，受到伤害 -1/级'},
+  {id:'G22',w:'all',s:'通用',name:'弹反',max:1,desc:'翻滚无敌帧内挡下弹幕，并反震眩晕最近的敌人'},
+  {id:'G23',w:'all',s:'通用',name:'亡语',max:1,desc:'敌人死亡时爆发一小片能量波，波及周围敌人'},
+  {id:'G24',w:'all',s:'通用',name:'反震护体',max:1,desc:'受到伤害时击退周围的敌人（脱身）'},
+  {id:'G25',w:'all',s:'通用',name:'升华',max:1,desc:'升级时回复2生命、清除全屏敌方弹幕并短暂无敌'},
+  {id:'G26',w:'all',s:'通用',name:'血之契约',max:1,desc:'拾取生命时额外获得1层护盾'},
+  {id:'G27',w:'all',s:'通用',name:'群狼',max:1,desc:'附近敌人越多伤害越高（每个+3%，最多+30%）'},
+  {id:'G28',w:'all',s:'通用',name:'净化',max:1,desc:'清空房间时回复2生命并获得1层护盾'},
+  {id:'G29',w:'all',s:'通用',name:'溢流护盾',max:1,desc:'治疗溢出最大生命的部分转化为护盾（上限3）'},
+  {id:'G30',w:'all',s:'通用',name:'复仇',max:1,desc:'受到伤害后0.8秒内，你造成的伤害 +30%（愤怒反击）'},
+  {id:'G31',w:'all',s:'通用',name:'磐石壁垒',max:2,desc:'每场战斗开始时额外获得1层护盾/级'},
+  {id:'G32',w:'all',s:'通用',name:'急救',max:1,desc:'拾取生命时获得0.8秒无敌'},
   // ===== 觉醒（该武器投入≥8点后解锁的终极天赋，每周目每武器限一次）=====
   {id:'AW_H',w:'hammer',s:'觉醒',name:'战神觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
   {id:'AW_S',w:'sword',s:'觉醒',name:'剑圣觉醒',max:1,awaken:1,desc:'流派大成：武器伤害+3、最大生命+1回满、全体攻速+25%'},
@@ -632,7 +649,7 @@ function newRun(wpn){
     roll:0,rollcd:0,rdx:1,rdy:0,blocking:false,blockT:9,blockGap:9,blockHealCd:0,
     shield:0,armor:0,stealth:0,combo:0,hitCnt:0,sub:'bow',charge:-1,
     buffAtk:0,mvx:0,mvy:0,face:1,walk:0,target:null,
-    meteorArmed:0,thunderArmed:0,staticHits:0,rampageT:0,stillT:0,lastHmAt:-9,frenzyT:0};
+    meteorArmed:0,thunderArmed:0,staticHits:0,rampageT:0,stillT:0,lastHmAt:-9,frenzyT:0,agileT:0,killStk:0,killT:0,rageT:0};
   // 元进度加成
   player.maxhp+=META.up.hp;player.hp=player.maxhp;
   run.coins=META.up.gold*15;run.shopDmg=META.up.dmg;
@@ -651,10 +668,14 @@ function moveSpeed(){
   return s;
 }
 function pickR(){return 34+22*tc('G3')+10*META.up.luck;}
-function heal(n){const b=player.hp;player.hp=clamp(player.hp+n,0,player.maxhp);if(player.hp>b){fText(player.x,player.y-12,'+'+(player.hp-b),'#6ee87a');SFX.heart();}}
+function heal(n){const b=player.hp;player.hp=clamp(player.hp+n,0,player.maxhp);
+  if(tc('G29')){const over=b+n-player.maxhp;if(over>0)player.shield=Math.min(3,player.shield+1);} // 溢流护盾：治疗溢出转护盾
+  if(player.hp>b){fText(player.x,player.y-12,'+'+(player.hp-b),'#6ee87a');SFX.heart();}}
 function giveXp(n){
   run.xp+=n*(1+0.25*tc('G8'));
-  while(run.xp>=run.xpNeed){run.xp-=run.xpNeed;run.level++;run.xpNeed=6+4*(run.level-1);run.pending++;SFX.lvl();fText(player.x,player.y-16,'升级！','#ffe066');}
+  while(run.xp>=run.xpNeed){run.xp-=run.xpNeed;run.level++;run.xpNeed=6+4*(run.level-1);run.pending++;SFX.lvl();fText(player.x,player.y-16,'升级！','#ffe066');
+    if(tc('G25')){heal(2);player.inv=Math.max(player.inv,1);for(const p of projs)if(p.from==='e')p.dead=true;} // 升华：升级净化
+  }
 }
 
 /* ================= 伤害结算 ================= */
@@ -672,6 +693,10 @@ function dmgEnemy(e,d,o){
     if(run.weapon==='mage'&&tc('P11')&&e.burnT>0)d*=1.3;                   // 引燃：对燃烧敌人增伤
     if(run.weapon==='mage'&&tc('I10')){if(e.frozen>0)d*=2;else if(e.slowT>0)d*=1.3;} // 碎冰
     if(run.weapon==='ranger'&&tc('D10')&&e.poisonT>0)d*=1.25; // 弱点：对中毒敌人增伤
+    if(tc('G19')&&player.killStk)d*=(1+0.04*player.killStk);   // 嗜杀：连杀叠伤
+    if(tc('G20'))d+=Math.floor(run.coins/80);                  // 黄金律：金币化伤害
+    if(tc('G27')){let near=0;for(const m of enemies)if(!m.dead&&!m.barrel&&dist(m.x,m.y,player.x,player.y)<90)near++;if(near>1)d*=(1+0.03*Math.min(near-1,10));} // 群狼：人越多越猛
+    if(player.rageT>0&&tc('G30'))d*=1.3;                       // 复仇：愤怒窗口增伤
   }
   const critCh=Math.min(0.85,0.09*run.mods.crit+0.06*tc('G14')+(o.critBonus||0)); // 暴击几率:铸造词条+精准天赋+蓄力箭
   if(isMod&&critCh>0&&Math.random()<critCh){d*=(2.2+0.5*tc('G15'));crit=true;}
@@ -733,6 +758,8 @@ function killEnemy(e){
   run.kills++;
   if(tc('W11')&&run.weapon==='hammer')player.rampageT=1.5; // 嗜战狂潮：击杀滚雪球
   if(tc('U10')&&run.weapon==='mage')player.mana=Math.min(player.maxmana,player.mana+12); // 灵能汲取
+  if(tc('G19')){player.killStk=Math.min(10,(player.killStk||0)+1);player.killT=4;} // 嗜杀：累积杀意
+  if(tc('G23')&&!e.boss){parts.push({x:e.x,y:e.y,vx:0,vy:0,life:0.18,size:24,col:'rgba(192,160,255,.4)',ring:true});for(const m of enemies)if(!m.dead&&!m.barrel&&m!==e&&dist(m.x,m.y,e.x,e.y)<26)dmgEnemy(m,2+Math.floor(run.shopDmg/2),{col:'#c0a0ff',fromPlayer:true,dot:true});} // 亡语
   burst(e.x,e.y,14,e.boss?'#ffd0ff':'#c0c0d0');
   SFX.poof();
   if(e.burnT>0&&tc('P6'))explodeAt(e.x,e.y,2,16); // 爆燃连锁：燃烧敌人死亡即爆炸
@@ -817,7 +844,10 @@ function damagePlayer(d,sx,sy,src){
   if(tc('F9')){const so=swords.find(s=>s.st==='orbit');if(so&&Math.random()<0.4){so.st='fly';so.bounced=false;let b=null,bd=150;for(const e of enemies)if(!e.dead&&!e.barrel){const dd=dist(player.x,player.y,e.x,e.y);if(dd<bd){bd=dd;b=e;}}so.tgt=b;fText(player.x,player.y-12,'灵剑护主!','#bfe0ff');SFX.block();burst(player.x,player.y,8,'#bfe0ff');player.inv=0.6;return;}} // 灵剑护主
   if(run.weapon==='mage'&&tc('U9')&&player.mana>=25){player.mana-=25;fText(player.x,player.y-12,'法力护盾!','#8fb4ff');SFX.block();burst(player.x,player.y,8,'#8fb4ff');player.inv=0.3;return;} // 法力护盾：耗蓝免伤
   if(tc('J8')&&player.stillT>0.6)d=Math.max(1,d-tc('J8')); // 不动如山：守势减伤
+  if(tc('G21')&&player.hp<player.maxhp*0.35)d=Math.max(1,d-tc('G21')); // 险境求生：残血减伤
   player.hp-=d;player.inv=0.9*(1+0.25*tc('G12'));shake=Math.max(shake,4);SFX.hurt();
+  if(tc('G30'))player.rageT=0.8; // 复仇：受伤进入愤怒窗口
+  if(tc('G24')){for(const e of enemies)if(!e.dead&&!e.barrel&&dist(e.x,e.y,player.x,player.y)<40){const a=Math.atan2(e.y-player.y,e.x-player.x);e.vx+=Math.cos(a)*160;e.vy+=Math.sin(a)*160;}} // 反震护体
   burst(player.x,player.y,10,'#e34a5a');
   if(player.stealth>0)player.stealth=0;
   if(player.hp<=0&&tc('G5')&&!run.defUsed){ // 金身不灭：每层一次免死
@@ -1593,9 +1623,10 @@ function update(dt){
   run.time+=dt;
   const P=player;
   // 冷却
-  P.cd=Math.max(0,P.cd-dt*(run.hasteMul||1));P.inv=Math.max(0,P.inv-dt); // hasteMul：觉醒加速全武器出手
+  P.cd=Math.max(0,P.cd-dt*(run.hasteMul||1)*(P.agileT>0?1.3:1));P.inv=Math.max(0,P.inv-dt); // hasteMul：觉醒加速全武器出手 + 灵动
   P.rollcd=Math.max(0,P.rollcd-dt);P.blockHealCd=Math.max(0,P.blockHealCd-dt);
   P.stealth=Math.max(0,P.stealth-dt);P.buffAtk=Math.max(0,P.buffAtk-dt);P.rampageT=Math.max(0,(P.rampageT||0)-dt);P.frenzyT=Math.max(0,(P.frenzyT||0)-dt);
+  P.agileT=Math.max(0,(P.agileT||0)-dt);P.rageT=Math.max(0,(P.rageT||0)-dt);if(P.killT>0){P.killT-=dt;if(P.killT<=0)P.killStk=0;} // 灵动/复仇/嗜杀衰减
   if(run.weapon==='mage')P.mana=Math.min(P.maxmana,P.mana+(20+8*tc('U3'))*dt);
   // 自动索敌：武器朝向最近的敌人；没有敌人时朝移动方向
   mouse.wx=mouse.x+cam.x;mouse.wy=mouse.y+cam.y;
@@ -1623,7 +1654,7 @@ function update(dt){
   if(ml>0||P.roll>0)P.stillT=0;else P.stillT=(P.stillT||0)+dt; // 不动如山：静止计时
   // 翻滚：纯闪避位移（不再绑定键石技能）
   if(pressed.Space&&P.rollcd<=0&&P.roll<=0){
-    P.roll=0.18;P.rollcd=0.7;SFX.stealth();
+    P.roll=0.18;P.rollcd=0.7;SFX.stealth();P._rollHit=new Set(); // 翻滚斩：每次翻滚独立命中集
     if(ml===0){P.rdx=Math.cos(P.aim);P.rdy=Math.sin(P.aim);}
     burst(P.x,P.y,6,'#b0c0d0');
     if(tc('R1')){const nm=tc('R3');for(let i=0;i<=nm;i++)dropMine(P.x+rnd(-6,6),P.y+rnd(-6,6));} // 诡雷仍绑翻滚(埋雷是走位型)
@@ -1636,7 +1667,8 @@ function update(dt){
   if(P.roll>0){
     P.roll-=dt;
     moveEnt(P,P.rdx*moveSpeed()*3.2*dt,P.rdy*moveSpeed()*3.2*dt);
-    if(P.roll<=0&&run.weapon==='ranger'&&tc('D1')){P.stealth=1.5;SFX.stealth();}
+    if(tc('G17')){if(!P._rollHit)P._rollHit=new Set();for(const e of enemies)if(!e.dead&&!e.barrel&&!P._rollHit.has(e)&&dist(e.x,e.y,P.x,P.y)<e.r+8){P._rollHit.add(e);dmgEnemy(e,3+run.shopDmg,{fromPlayer:true,col:'#cfe0ff',kx:(e.x-P.x)*6,ky:(e.y-P.y)*6});}} // 翻滚斩
+    if(P.roll<=0){if(run.weapon==='ranger'&&tc('D1')){P.stealth=1.5;SFX.stealth();}if(tc('G18'))P.agileT=1;} // 灵动
   }else if(ml>0){
     const sprint=(keys.ShiftLeft||keys.ShiftRight)?(1.5+0.15*tc('G16')):1; // Shift 疾跑
     if(sprint>1&&(Math.abs(mx)>0.01||Math.abs(my)>0.01)&&Math.random()<0.4)parts.push({x:P.x,y:P.y+4,vx:-mx*20,vy:-my*20,life:0.2,size:1.5,col:'#8a94a8',streak:true});
@@ -1686,6 +1718,7 @@ function update(dt){
   if(lockRoom&&enemies.every(e=>e.dead||e.barrel)){
     const LR=lockRoom;
     LR.cleared=true;LR.locked=false;lockRoom=null;
+    if(tc('G28')){heal(2);player.shield=Math.min(3,player.shield+1);} // 净化：清房回血+护盾
     if(LR.type==='combat'){
       run.coins+=5;fText(P.x,P.y-16,'清房 +5金币','#ffe066');SFX.coin();
       if(Math.random()<0.25)pickups.push({t:'heart',x:(LR.x+LR.w/2)*T,y:(LR.y+LR.h/2)*T,vx:0,vy:0,v:1});
@@ -1697,7 +1730,7 @@ function update(dt){
     }
   }
   // 战斗开始时护甲
-  if(lockRoom&&!lockRoom.armorGiven){lockRoom.armorGiven=true;player.armor=tc('J3')+tc('G13');}
+  if(lockRoom&&!lockRoom.armorGiven){lockRoom.armorGiven=true;player.armor=tc('J3')+tc('G13');if(tc('G31'))player.shield=Math.min(3,player.shield+tc('G31'));} // 磐石壁垒
   // 敌人
   for(const e of enemies)if(!e.dead)enemyUpdate(e,dt);
   enemies=enemies.filter(e=>!e.dead);
@@ -1736,7 +1769,8 @@ function update(dt){
       }
     }else{
       if(dist(p.x,p.y,P.x,P.y)<p.r+P.r){
-        if(P.roll>0||P.inv>0){}
+        if(P.roll>0&&tc('G22')){p.dead=true;let b=null,bd=120;for(const m of enemies)if(!m.dead&&!m.barrel){const dd=dist(P.x,P.y,m.x,m.y);if(dd<bd){bd=dd;b=m;}}if(b){burst(P.x,P.y,8,'#ffe066');dmgEnemy(b,6+run.shopDmg,{fromPlayer:true,col:'#ffe066'});if(!b.boss)b.stun=Math.max(b.stun||0,0.8);fText(P.x,P.y-12,'弹反!','#ffe066');}} // 弹反
+        else if(P.roll>0||P.inv>0){}
         else if(tryBlock(p.x,p.y,p.dmg,null))p.dead=true;
         else{damagePlayer(p.dmg,p.x-p.vx*0.01,p.y-p.vy*0.01,null);p.dead=true;}
       }
@@ -1788,7 +1822,7 @@ function update(dt){
       k.dead=true;
       if(k.t==='xp'){giveXp(k.v);SFX.xp();}
       else if(k.t==='coin'){run.coins+=k.v;SFX.coin();}
-      else if(k.t==='heart')heal(1);
+      else if(k.t==='heart'){heal(1);if(tc('G26'))player.shield=Math.min(3,player.shield+1);if(tc('G32'))player.inv=Math.max(player.inv,0.8);} // 血之契约/急救
     }
   }
   pickups=pickups.filter(k=>!k.dead);
